@@ -107,13 +107,13 @@ export default function ProductDetail() {
       {/* Images Carousel */}
       <div className="bg-white relative">
         <div className="aspect-square w-full">
-          <img 
-            src={product.imageUrl} 
+          <img
+            src={product.imageUrl}
             alt={product.name}
             className="w-full h-full object-contain p-8"
           />
         </div>
-        
+
         {/* Pagination Dots */}
         <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-primary" />
@@ -121,6 +121,52 @@ export default function ProductDetail() {
           <div className="w-2 h-2 rounded-full bg-primary/30" />
         </div>
       </div>
+
+      {/* Variants — directly below image */}
+      {product.variants && product.variants.length > 0 && (
+        <div className="bg-white border-t border-border px-4 pt-3 pb-3">
+          <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
+            {product.variants.map((v) => {
+              const isSelected = selectedVariant === v.id;
+              const isLowest = product.variants
+                ? v.price === Math.min(...product.variants.map((x) => x.price))
+                : false;
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => setSelectedVariant(v.id)}
+                  className={cn(
+                    "relative flex-shrink-0 px-4 py-2 text-sm font-semibold rounded-lg border transition-colors",
+                    isSelected
+                      ? "border-[#16A34A] bg-white text-foreground"
+                      : "border-border bg-white text-foreground hover:bg-slate-50"
+                  )}
+                >
+                  {/* Promo badge on top of selected */}
+                  {isSelected && product.discountPercent && (
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap leading-none">
+                      Promo {formatPrice(v.price)}
+                    </span>
+                  )}
+                  {/* Harga Terbaik badge for cheapest */}
+                  {isLowest && !isSelected && (
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#16A34A] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap leading-none">
+                      Harga Terbaik
+                    </span>
+                  )}
+                  {v.label}
+                </button>
+              );
+            })}
+          </div>
+          <button className="mt-2 text-xs text-primary font-medium flex items-center gap-0.5">
+            Pilihan Lainnya
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Main Info */}
       <div className="bg-white p-4 mb-2 shadow-sm border-b border-border">
@@ -174,33 +220,6 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
-
-      {/* Variants */}
-      {product.variants && product.variants.length > 0 && (
-        <div className="bg-white p-4 mb-2 shadow-sm border-y border-border">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-base">Pilih Varian</h3>
-            <span className="text-xs text-primary font-medium">Pilihan Lainnya v</span>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            {product.variants.map((v) => (
-              <button
-                key={v.id}
-                onClick={() => setSelectedVariant(v.id)}
-                className={cn(
-                  "px-4 py-2 text-sm font-medium rounded-lg border transition-colors",
-                  selectedVariant === v.id
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-border bg-white text-foreground hover:bg-slate-50"
-                )}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Product Info Accordion Alternative */}
       <div className="bg-white p-4 mb-2 shadow-sm border-y border-border">
