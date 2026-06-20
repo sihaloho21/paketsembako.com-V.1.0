@@ -1,22 +1,26 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Hypermart grocery store API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: products
+    description: Product operations
+  - name: categories
+    description: Category operations
+  - name: cart
+    description: Cart operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +28,195 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: sort
+          in: query
+          schema:
+            type: ["string", "null"]
+            enum: ["popular", "terbaru", "teratas", "harga", null]
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products/featured:
+    get:
+      operationId: getFeaturedProducts
+      tags: [products]
+      summary: Get featured/recommended products
+      responses:
+        "200":
+          description: Featured products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products/promo:
+    get:
+      operationId: getPromoProducts
+      tags: [products]
+      summary: Get promo/sale products
+      responses:
+        "200":
+          description: Promo products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products/trending:
+    get:
+      operationId: getTrendingProducts
+      tags: [products]
+      summary: Get trending/best seller products
+      responses:
+        "200":
+          description: Trending products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get product detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+        "404":
+          description: Not found
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  /cart:
+    get:
+      operationId: getCart
+      tags: [cart]
+      summary: Get cart
+      responses:
+        "200":
+          description: Cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+
+  /cart/items:
+    post:
+      operationId: addToCart
+      tags: [cart]
+      summary: Add item to cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CartItemInput"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+
+  /cart/items/{productId}:
+    put:
+      operationId: updateCartItem
+      tags: [cart]
+      summary: Update cart item quantity
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CartItemUpdate"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+    delete:
+      operationId: removeFromCart
+      tags: [cart]
+      summary: Remove item from cart
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +227,158 @@ components:
       required:
         - status
 
+    Product:
+      type: object
+      required: [id, name, price, imageUrl, categoryId, categoryName, rating, reviewCount, sold]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: integer
+        originalPrice:
+          type: ["integer", "null"]
+        discountPercent:
+          type: ["integer", "null"]
+        imageUrl:
+          type: string
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        sold:
+          type: integer
+        badge:
+          type: ["string", "null"]
+        isPromo:
+          type: boolean
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductVariant"
+
+    ProductVariant:
+      type: object
+      required: [id, label, price]
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        price:
+          type: integer
+
+    ProductDetail:
+      type: object
+      required: [id, name, price, imageUrl, categoryId, categoryName, rating, reviewCount, sold, description, shelfLife, deliveryInfo, variants]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: integer
+        originalPrice:
+          type: ["integer", "null"]
+        discountPercent:
+          type: ["integer", "null"]
+        imageUrl:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        sold:
+          type: integer
+        badge:
+          type: ["string", "null"]
+        isPromo:
+          type: boolean
+        description:
+          type: string
+        shelfLife:
+          type: string
+        deliveryInfo:
+          type: string
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductVariant"
+        relatedProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+
+    Category:
+      type: object
+      required: [id, name, productCount, imageUrl]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        productCount:
+          type: integer
+        imageUrl:
+          type: string
+
+    Cart:
+      type: object
+      required: [items, totalItems, totalPrice]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        totalItems:
+          type: integer
+        totalPrice:
+          type: integer
+
+    CartItem:
+      type: object
+      required: [productId, name, price, imageUrl, quantity]
+      properties:
+        productId:
+          type: integer
+        name:
+          type: string
+        price:
+          type: integer
+        imageUrl:
+          type: string
+        quantity:
+          type: integer
+        variantLabel:
+          type: ["string", "null"]
+
+    CartItemInput:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: integer
+        variantId:
+          type: ["integer", "null"]
+
+    CartItemUpdate:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
