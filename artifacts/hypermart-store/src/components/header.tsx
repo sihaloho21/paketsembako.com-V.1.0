@@ -15,8 +15,9 @@ interface HeaderProps {
 export function Header({ scrolled = false }: HeaderProps) {
   const [location] = useLocation();
   const isDetail = location.startsWith("/product/");
+  const isAccount = location === "/account";
 
-  if (isDetail) return null;
+  if (isDetail || isAccount) return null;
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm overflow-hidden">
@@ -38,19 +39,27 @@ export function Header({ scrolled = false }: HeaderProps) {
           scrolled ? "max-h-0 py-0 opacity-0" : "max-h-[60px] py-2.5 opacity-100"
         )}
       >
-        <div className="w-9 h-9 rounded-full bg-white/25 border-2 border-white/50 flex items-center justify-center shrink-0">
-          <span className="text-white font-bold text-sm">U</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1">
-            <span className="text-white font-bold text-sm leading-tight">User A</span>
-            <ChevronDown size={13} className="text-white/80" />
+        {/* Clickable avatar + name → /account */}
+        <Link href="/account" className="flex items-center gap-2 flex-1 min-w-0">
+          <div
+            data-testid="avatar-user"
+            className="w-9 h-9 rounded-full bg-white/25 border-2 border-white/50 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+          >
+            <span className="text-white font-bold text-sm">U</span>
           </div>
-          <div className="flex items-center gap-1 mt-0.5">
-            <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full" />
-            <span className="text-white/90 text-[10px] font-semibold">25.000 Point</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1">
+              <span className="text-white font-bold text-sm leading-tight">User A</span>
+              <ChevronDown size={13} className="text-white/80" />
+            </div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full" />
+              <span className="text-white/90 text-[10px] font-semibold">25.000 Point</span>
+            </div>
           </div>
-        </div>
+        </Link>
+
+        {/* Action buttons */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             data-testid="button-mengikuti"
