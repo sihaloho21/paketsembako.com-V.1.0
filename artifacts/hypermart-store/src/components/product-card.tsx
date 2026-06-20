@@ -42,13 +42,6 @@ export function ProductCard({ product, className, horizontal }: ProductCardProps
         horizontal ? "w-[140px] flex-col shrink-0" : "flex-col h-full",
         className
       )}>
-        {/* Discount Badge */}
-        {product.discountPercent ? (
-          <div className="absolute top-0 left-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg z-10">
-            {product.badge || `-${product.discountPercent}%`}
-          </div>
-        ) : null}
-
         <div className="relative aspect-square w-full bg-slate-50 p-2 flex items-center justify-center">
           <img 
             src={product.imageUrl} 
