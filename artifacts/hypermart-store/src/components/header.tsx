@@ -8,15 +8,19 @@ const tabs = [
   { name: "Kategori", path: "/categories" },
 ];
 
-export function Header() {
+interface HeaderProps {
+  scrolled?: boolean;
+}
+
+export function Header({ scrolled = false }: HeaderProps) {
   const [location] = useLocation();
   const isDetail = location.startsWith("/product/");
 
   if (isDetail) return null;
 
   return (
-    <header className="sticky top-0 z-40 bg-white shadow-sm">
-      {/* Top search bar */}
+    <header className="sticky top-0 z-40 bg-white shadow-sm overflow-hidden">
+      {/* Top search bar — always visible */}
       <div className="bg-white px-3 py-2 flex items-center gap-2 border-b border-border/40">
         <div className="flex-1 flex items-center gap-2 bg-slate-100 rounded-full px-3 py-1.5">
           <Search size={14} className="text-muted-foreground shrink-0" />
@@ -27,14 +31,16 @@ export function Header() {
         </div>
       </div>
 
-      {/* User / store profile strip */}
-      <div className="bg-primary px-3 py-2.5 flex items-center gap-2">
-        {/* Avatar */}
+      {/* User / store profile strip — collapses when scrolled */}
+      <div
+        className={cn(
+          "bg-primary px-3 flex items-center gap-2 transition-all duration-300 ease-in-out overflow-hidden",
+          scrolled ? "max-h-0 py-0 opacity-0" : "max-h-[60px] py-2.5 opacity-100"
+        )}
+      >
         <div className="w-9 h-9 rounded-full bg-white/25 border-2 border-white/50 flex items-center justify-center shrink-0">
           <span className="text-white font-bold text-sm">U</span>
         </div>
-
-        {/* Name + points */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
             <span className="text-white font-bold text-sm leading-tight">User A</span>
@@ -45,8 +51,6 @@ export function Header() {
             <span className="text-white/90 text-[10px] font-semibold">25.000 Point</span>
           </div>
         </div>
-
-        {/* Action buttons */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             data-testid="button-mengikuti"
@@ -65,7 +69,7 @@ export function Header() {
         </div>
       </div>
 
-      {/* Toko / Produk / Kategori tabs */}
+      {/* Toko / Produk / Kategori tabs — always visible */}
       <div className="bg-white border-b border-border flex">
         {tabs.map((tab) => {
           const isActive =
