@@ -125,37 +125,41 @@ export default function ProductDetail() {
       {/* Variants — directly below image */}
       {product.variants && product.variants.length > 0 && (
         <div className="bg-white border-t border-border px-4 pt-3 pb-3">
-          <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
+          <div className="flex items-end gap-2 overflow-x-auto hide-scrollbar pb-1">
             {product.variants.map((v) => {
               const isSelected = selectedVariant === v.id;
               const isLowest = product.variants
                 ? v.price === Math.min(...product.variants.map((x) => x.price))
                 : false;
+              const showPromoBadge = isSelected && !!product.discountPercent;
+              const showBestBadge = isLowest && !isSelected;
               return (
-                <button
-                  key={v.id}
-                  onClick={() => setSelectedVariant(v.id)}
-                  className={cn(
-                    "relative flex-shrink-0 px-4 py-2 text-sm font-semibold rounded-lg border transition-colors",
-                    isSelected
-                      ? "border-[#16A34A] bg-white text-foreground"
-                      : "border-border bg-white text-foreground hover:bg-slate-50"
-                  )}
-                >
-                  {/* Promo badge on top of selected */}
-                  {isSelected && product.discountPercent && (
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap leading-none">
-                      Promo {formatPrice(v.price)}
-                    </span>
-                  )}
-                  {/* Harga Terbaik badge for cheapest */}
-                  {isLowest && !isSelected && (
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#16A34A] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap leading-none">
-                      Harga Terbaik
-                    </span>
-                  )}
-                  {v.label}
-                </button>
+                <div key={v.id} className="flex flex-col items-center flex-shrink-0">
+                  {/* Badge row — always takes space to keep alignment */}
+                  <div className="h-5 flex items-center justify-center mb-1">
+                    {showPromoBadge && (
+                      <span className="bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap leading-none">
+                        Promo {formatPrice(v.price)}
+                      </span>
+                    )}
+                    {showBestBadge && (
+                      <span className="bg-[#16A34A] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap leading-none">
+                        Harga Terbaik
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setSelectedVariant(v.id)}
+                    className={cn(
+                      "px-4 py-2 text-sm font-semibold rounded-lg border transition-colors whitespace-nowrap",
+                      isSelected
+                        ? "border-[#16A34A] bg-white text-foreground"
+                        : "border-border bg-white text-foreground hover:bg-slate-50"
+                    )}
+                  >
+                    {v.label}
+                  </button>
+                </div>
               );
             })}
           </div>
