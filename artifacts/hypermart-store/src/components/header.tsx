@@ -1,47 +1,98 @@
 import { Link, useLocation } from "wouter";
-import { Search, MapPin, ChevronDown, Bell, User } from "lucide-react";
-import { Badge } from "./ui/badge";
+import { Search, ChevronDown, MessageCircle, UserCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const tabs = [
+  { name: "Toko", path: "/" },
+  { name: "Produk", path: "/products", isNew: true },
+  { name: "Kategori", path: "/categories" },
+];
 
 export function Header() {
   const [location] = useLocation();
-
-  // The blue header is shared, but we might adjust content based on route
   const isDetail = location.startsWith("/product/");
 
-  if (isDetail) {
-    return null; // Product detail has its own transparent/back header
-  }
+  if (isDetail) return null;
 
   return (
-    <header className="bg-primary text-primary-foreground sticky top-0 z-40 px-4 pt-4 pb-3 flex flex-col gap-3 rounded-b-xl shadow-sm">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="bg-white/20 p-2 rounded-full">
-            <User size={18} className="text-white" />
-          </div>
-          <div>
-            <div className="text-xs text-white/80 font-medium">Hypermart Sarang</div>
-            <div className="flex items-center text-sm font-bold">
-              <span className="truncate max-w-[150px]">Kirim ke Alamat Utama</span>
-              <ChevronDown size={14} className="ml-1" />
-            </div>
-          </div>
+    <header className="sticky top-0 z-40 bg-white shadow-sm">
+      {/* Top search bar */}
+      <div className="bg-white px-3 py-2 flex items-center gap-2 border-b border-border/40">
+        <div className="flex-1 flex items-center gap-2 bg-slate-100 rounded-full px-3 py-1.5">
+          <Search size={14} className="text-muted-foreground shrink-0" />
+          <span className="text-xs text-muted-foreground font-medium">Hypermart Sarang</span>
         </div>
-        <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="bg-white/10 text-white hover:bg-white/20 border-0 shadow-none font-bold text-xs py-1 px-2 rounded-full">
-            1.2K Pts
-          </Badge>
-          <Bell size={20} />
+        <div className="bg-primary text-white text-[10px] font-black px-2 py-1 rounded-sm tracking-wider shrink-0">
+          HON
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-        <input 
-          type="search" 
-          placeholder="Cari produk disini..." 
-          className="w-full bg-white rounded-full py-2 pl-9 pr-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-inner"
-        />
+      {/* User / store profile strip */}
+      <div className="bg-primary px-3 py-2.5 flex items-center gap-2">
+        {/* Avatar */}
+        <div className="w-9 h-9 rounded-full bg-white/25 border-2 border-white/50 flex items-center justify-center shrink-0">
+          <span className="text-white font-bold text-sm">U</span>
+        </div>
+
+        {/* Name + points */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1">
+            <span className="text-white font-bold text-sm leading-tight">User A</span>
+            <ChevronDown size={13} className="text-white/80" />
+          </div>
+          <div className="flex items-center gap-1 mt-0.5">
+            <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full" />
+            <span className="text-white/90 text-[10px] font-semibold">25.000 Point</span>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            data-testid="button-mengikuti"
+            className="flex items-center gap-1 bg-white text-primary text-[11px] font-bold px-2.5 py-1.5 rounded border border-white/80 shadow-sm"
+          >
+            <UserCheck size={11} />
+            Mengikuti
+          </button>
+          <button
+            data-testid="button-chat"
+            className="flex items-center gap-1 bg-primary text-white text-[11px] font-bold px-2.5 py-1.5 rounded border border-white/50"
+          >
+            <MessageCircle size={11} />
+            Chat
+          </button>
+        </div>
+      </div>
+
+      {/* Toko / Produk / Kategori tabs */}
+      <div className="bg-white border-b border-border flex">
+        {tabs.map((tab) => {
+          const isActive =
+            tab.path === "/"
+              ? location === "/"
+              : location.startsWith(tab.path);
+
+          return (
+            <Link key={tab.path} href={tab.path} className="flex-1">
+              <div
+                className={cn(
+                  "relative flex items-center justify-center gap-1 py-2.5 text-[13px] font-semibold transition-colors",
+                  isActive
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-muted-foreground"
+                )}
+              >
+                {tab.name}
+                {tab.isNew && (
+                  <span className="bg-red-500 text-white text-[8px] font-black px-1 py-0.5 rounded-sm leading-none">
+                    NEW
+                  </span>
+                )}
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </header>
   );
