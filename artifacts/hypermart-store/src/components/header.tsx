@@ -15,7 +15,7 @@ interface HeaderProps {
 export function Header({ scrolled = false }: HeaderProps) {
   const [location] = useLocation();
   const isDetail = location.startsWith("/product/");
-  const isHidden = isDetail || location === "/account" || location === "/poin" || location === "/level";
+  const isHidden = isDetail || ["/account", "/poin", "/level", "/voucher"].includes(location);
 
   if (isHidden) return null;
 
@@ -71,9 +71,11 @@ export function Header({ scrolled = false }: HeaderProps) {
               <Coins size={17} className="text-white" />
             </div>
           </Link>
-          <button data-testid="icon-voucher" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
-            <Ticket size={17} className="text-white" />
-          </button>
+          <Link href="/voucher">
+            <div data-testid="icon-voucher" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
+              <Ticket size={17} className="text-white" />
+            </div>
+          </Link>
           <Link href="/account">
             <div data-testid="icon-akun" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
               <UserCircle2 size={17} className="text-white" />
