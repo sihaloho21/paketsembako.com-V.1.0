@@ -1,6 +1,6 @@
 import { useGetProduct, useAddToCart, getGetCartQueryKey } from "@workspace/api-client-react";
 import { useRoute, Link } from "wouter";
-import { ChevronLeft, Share2, ShoppingBag, Minus, Plus, Heart, MapPin, Clock } from "lucide-react";
+import { ChevronLeft, Share2, ShoppingBag, Minus, Plus, Heart } from "lucide-react";
 import { formatPrice } from "@/lib/format";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -208,21 +208,6 @@ export default function ProductDetail() {
           <div>{product.sold} Terjual</div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border pt-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-              <MapPin size={16} />
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Dikirim dari</div>
-              <div className="text-sm font-medium">Hypermart Sarang</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 text-sm font-medium text-[#16A34A]">
-            <Clock size={16} />
-            <span>{product.deliveryInfo}</span>
-          </div>
-        </div>
       </div>
 
       {/* Product Info Accordion Alternative */}
@@ -233,14 +218,6 @@ export default function ProductDetail() {
           <div className="flex">
             <div className="w-1/3 text-sm text-muted-foreground">Kategori</div>
             <div className="w-2/3 text-sm font-medium text-primary">{product.categoryName}</div>
-          </div>
-          <div className="flex">
-            <div className="w-1/3 text-sm text-muted-foreground">Masa Simpan</div>
-            <div className="w-2/3 text-sm font-medium">{product.shelfLife}</div>
-          </div>
-          <div className="flex">
-            <div className="w-1/3 text-sm text-muted-foreground">Kondisi</div>
-            <div className="w-2/3 text-sm font-medium"><Badge variant="outline" className="font-normal">Konvensional</Badge></div>
           </div>
         </div>
 
