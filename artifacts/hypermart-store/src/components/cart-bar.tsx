@@ -8,7 +8,9 @@ export function CartBar() {
   const [location] = useLocation();
   
   if (!cart || cart.totalItems === 0) return null;
-  if (location.startsWith("/product/")) return null; // Detailed view has its own sticky cart
+
+  const hideOn = ["/product/", "/account", "/poin", "/level", "/voucher", "/cart"];
+  if (hideOn.some((p) => location.startsWith(p))) return null;
   
   return (
     <div className="fixed bottom-[70px] left-0 right-0 z-50 px-4 max-w-[430px] mx-auto pointer-events-none">
