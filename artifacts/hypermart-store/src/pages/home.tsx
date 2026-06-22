@@ -6,8 +6,19 @@ import {
 } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/product-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Flame, Zap, Tag } from "lucide-react";
 import { Link } from "wouter";
+
+const quickCats = [
+  { emoji: "🥩", label: "Daging" },
+  { emoji: "🥦", label: "Sayur" },
+  { emoji: "🍎", label: "Buah" },
+  { emoji: "🥛", label: "Susu" },
+  { emoji: "🍜", label: "Mie & Pasta" },
+  { emoji: "🧴", label: "Perawatan" },
+  { emoji: "🧹", label: "Kebersihan" },
+  { emoji: "🍪", label: "Snack" },
+];
 
 export default function Home() {
   const { data: featured, isLoading: loadFeatured } = useGetFeaturedProducts();
@@ -16,21 +27,79 @@ export default function Home() {
   const { data: categories, isLoading: loadCategories } = useListCategories();
 
   return (
-    <div className="bg-slate-50 pb-24">
+    <div className="bg-slate-100 pb-24">
 
-      {/* 1. PROMO SPECIAL UP TO 40% */}
-      <section className="bg-white mb-2 pb-3">
+      {/* ── 1. HERO PROMO BANNER ── */}
+      <div className="px-3 pt-3 pb-2">
+        <div className="relative rounded-2xl overflow-hidden"
+          style={{ background: "linear-gradient(120deg, #1a56db 0%, #0ea5e9 60%, #38bdf8 100%)" }}>
+          {/* Decorative circles */}
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10" />
+          <div className="absolute -bottom-6 right-12 w-20 h-20 rounded-full bg-white/10" />
+          <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-yellow-400/80" />
+
+          <div className="relative px-5 py-5 flex items-center justify-between">
+            <div>
+              <span className="inline-block bg-yellow-400 text-yellow-900 text-[9px] font-black px-2 py-0.5 rounded-full mb-2 tracking-wider uppercase">
+                🔥 Promo Hari Ini
+              </span>
+              <h1 className="text-white text-2xl font-black leading-tight">
+                UP TO<br />
+                <span className="text-yellow-300">40% OFF</span>
+              </h1>
+              <p className="text-white/80 text-[11px] mt-1 mb-3">Belanja hemat setiap hari!</p>
+              <Link href="/products">
+                <span className="inline-flex items-center gap-1 bg-white text-primary text-xs font-bold px-3.5 py-1.5 rounded-full shadow-sm hover:bg-yellow-50 transition-colors">
+                  Belanja Sekarang <ChevronRight size={12} />
+                </span>
+              </Link>
+            </div>
+            {/* Illustration */}
+            <div className="flex flex-col items-center gap-0.5 shrink-0">
+              <div className="text-5xl drop-shadow-lg">🛒</div>
+              <div className="flex gap-1 mt-1">
+                {["🥕","🍊","🥬"].map((e, i) => (
+                  <span key={i} className="text-lg">{e}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 2. QUICK CATEGORY ICONS ── */}
+      <div className="bg-white mb-2 py-3">
+        <div className="overflow-x-auto px-3 hide-scrollbar">
+          <div className="flex gap-4 w-max">
+            {quickCats.map((c) => (
+              <Link key={c.label} href="/categories">
+                <div className="flex flex-col items-center gap-1.5 w-14">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-2xl shadow-sm border border-blue-100 hover:bg-blue-100 transition-colors">
+                    {c.emoji}
+                  </div>
+                  <span className="text-[10px] font-medium text-foreground/80 text-center leading-tight">{c.label}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 3. PROMO SPECIAL UP TO 40% ── */}
+      <section className="bg-white mb-2">
         <div className="px-3 pt-3 pb-2 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1 h-4 bg-primary rounded-full block" />
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-red-500 flex items-center justify-center">
+              <Tag size={13} className="text-white" />
+            </div>
             <h2 className="text-[13px] font-bold text-foreground">PROMO SPECIAL UP TO 40%</h2>
           </div>
-          <Link href="/products" className="text-[11px] text-primary font-medium flex items-center gap-0.5">
+          <Link href="/products" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
             Lihat Semua <ChevronRight size={11} />
           </Link>
         </div>
-        <div className="overflow-x-auto pb-1 px-3 hide-scrollbar">
-          <div className="flex gap-2 w-max">
+        <div className="overflow-x-auto pb-3 px-3 hide-scrollbar">
+          <div className="flex gap-2.5 w-max">
             {loadPromos
               ? Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
@@ -42,11 +111,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. PRODUK REKOMENDASI */}
+      {/* ── 4. PRODUK REKOMENDASI (grid) ── */}
       <section className="mb-2">
-        <div className="bg-primary px-3 py-2.5 flex items-center justify-between">
-          <h2 className="text-[13px] font-bold text-white tracking-wide">PRODUK REKOMENDASI</h2>
-          <Link href="/products" className="text-white/80 text-[11px] font-medium flex items-center gap-0.5">
+        <div className="px-3 py-2.5 flex items-center justify-between bg-white border-b border-border/40">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center">
+              <Zap size={13} className="text-white fill-white" />
+            </div>
+            <h2 className="text-[13px] font-bold text-foreground">PRODUK REKOMENDASI</h2>
+          </div>
+          <Link href="/products" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
             Lihat Semua <ChevronRight size={11} />
           </Link>
         </div>
@@ -56,103 +130,28 @@ export default function Home() {
               ? Array.from({ length: 6 }).map((_, i) => (
                   <Skeleton key={i} className="h-[240px] rounded-xl" />
                 ))
-              : featured?.map((product) => (
+              : featured?.slice(0, 6).map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
           </div>
         </div>
       </section>
 
-      {/* 3. Kamu Mungkin Suka */}
+      {/* ── 5. PRODUK TERLARIS (horizontal) ── */}
       <section className="bg-white mb-2">
         <div className="px-3 pt-3 pb-2 flex items-center justify-between">
-          <h2 className="text-[13px] font-bold text-foreground">Kamu Mungkin Suka</h2>
-          <Link href="/products" className="text-[11px] text-primary font-medium flex items-center gap-0.5">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-orange-500 flex items-center justify-center">
+              <Flame size={13} className="text-white" />
+            </div>
+            <h2 className="text-[13px] font-bold text-foreground">PRODUK TERLARIS</h2>
+          </div>
+          <Link href="/products" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
             Lihat Semua <ChevronRight size={11} />
           </Link>
         </div>
         <div className="overflow-x-auto pb-3 px-3 hide-scrollbar">
-          <div className="flex gap-2 w-max">
-            {loadFeatured
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
-                ))
-              : featured?.map((product) => (
-                  <ProductCard key={product.id} product={product} horizontal />
-                ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Hypermart promo banner */}
-      <div className="bg-white mb-2 px-3 py-3">
-        <div
-          className="rounded-2xl overflow-hidden flex items-stretch"
-          style={{ background: "linear-gradient(135deg, #e8f4fd 0%, #b8d9f5 100%)" }}
-        >
-          <div className="flex-1 p-4 flex flex-col justify-center">
-            <div className="flex items-center gap-1.5 mb-2">
-              <div className="bg-primary rounded px-1.5 py-0.5">
-                <span className="text-white text-[9px] font-black tracking-wider">hypermart</span>
-              </div>
-            </div>
-            <p className="text-primary text-[15px] font-bold leading-tight">
-              belanja lengkap<br />bikin happy
-            </p>
-          </div>
-          <div className="w-[120px] relative bg-primary/10 flex items-end justify-center overflow-hidden">
-            <div className="relative mb-0 flex flex-col items-center pb-3">
-              <div className="w-9 h-9 bg-[#f5c99a] rounded-full border-2 border-[#e8a96a] mb-1 flex items-center justify-center">
-                <div className="w-4 h-2 bg-primary rounded-full mt-2" />
-              </div>
-              <div className="w-12 h-10 bg-primary rounded-t-xl flex items-center justify-center relative">
-                <span className="text-white text-[7px] font-bold text-center leading-tight">SO<br/>EASY</span>
-                <div className="absolute -left-3 top-1 w-4 h-2 bg-primary rounded-full" />
-                <div className="absolute -right-3 top-1 w-4 h-2 bg-primary rounded-full" />
-              </div>
-              <div className="w-10 h-8 bg-yellow-400 rounded border-2 border-yellow-500 flex items-center justify-center mt-1">
-                <span className="text-primary text-[8px] font-black">Go</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. KATEGORI PRODUK */}
-      <section className="mb-2">
-        <div className="bg-primary px-3 py-2.5 flex items-center justify-between">
-          <h2 className="text-[13px] font-bold text-white tracking-wide">KATEGORI PRODUK</h2>
-          <Link href="/categories" className="text-white/80 text-[11px] font-medium flex items-center gap-0.5">
-            Lihat Semua <ChevronRight size={11} />
-          </Link>
-        </div>
-        <div className="bg-white px-3 pt-2 pb-3">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-0">
-            {loadCategories
-              ? Array.from({ length: 12 }).map((_, i) => (
-                  <Skeleton key={i} className="h-8 mb-1 rounded" />
-                ))
-              : categories?.slice(0, 14).map((cat) => (
-                  <Link key={cat.id} href="/categories">
-                    <div className="py-2 border-b border-border/50 text-[12px] font-medium text-foreground hover:text-primary transition-colors leading-tight">
-                      {cat.name}
-                    </div>
-                  </Link>
-                ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 6. PRODUK TERLARIS */}
-      <section className="mb-2">
-        <div className="bg-primary px-3 py-2.5 flex items-center justify-between">
-          <h2 className="text-[13px] font-bold text-white tracking-wide">PRODUK TERLARIS</h2>
-          <Link href="/products" className="text-white/80 text-[11px] font-medium flex items-center gap-0.5">
-            Lihat Semua <ChevronRight size={11} />
-          </Link>
-        </div>
-        <div className="bg-white overflow-x-auto px-3 py-3 hide-scrollbar">
-          <div className="flex gap-2 w-max">
+          <div className="flex gap-2.5 w-max">
             {loadTrending
               ? Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
@@ -164,11 +163,58 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 7. Rekomendasi grid */}
+      {/* ── 6. KATEGORI PRODUK ── */}
+      <section className="mb-2 bg-white">
+        <div className="px-3 pt-3 pb-2 flex items-center justify-between border-b border-border/40">
+          <h2 className="text-[13px] font-bold text-foreground">KATEGORI PRODUK</h2>
+          <Link href="/categories" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
+            Lihat Semua <ChevronRight size={11} />
+          </Link>
+        </div>
+        <div className="px-3 pt-1 pb-3">
+          <div className="grid grid-cols-2 gap-x-4">
+            {loadCategories
+              ? Array.from({ length: 12 }).map((_, i) => (
+                  <Skeleton key={i} className="h-8 mb-1 rounded" />
+                ))
+              : categories?.slice(0, 14).map((cat) => (
+                  <Link key={cat.id} href="/categories">
+                    <div className="py-2.5 border-b border-border/40 text-[12px] font-medium text-foreground hover:text-primary transition-colors flex items-center justify-between">
+                      {cat.name}
+                      <ChevronRight size={10} className="text-muted-foreground" />
+                    </div>
+                  </Link>
+                ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 7. Kamu Mungkin Suka ── */}
+      <section className="bg-white mb-2">
+        <div className="px-3 pt-3 pb-2 flex items-center justify-between">
+          <h2 className="text-[13px] font-bold text-foreground">Kamu Mungkin Suka</h2>
+          <Link href="/products" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
+            Lihat Semua <ChevronRight size={11} />
+          </Link>
+        </div>
+        <div className="overflow-x-auto pb-3 px-3 hide-scrollbar">
+          <div className="flex gap-2.5 w-max">
+            {loadFeatured
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
+                ))
+              : featured?.map((product) => (
+                  <ProductCard key={product.id} product={product} horizontal />
+                ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 8. Semua Produk grid ── */}
       <section className="bg-white px-3 pt-3 pb-3">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[13px] font-bold text-foreground">Rekomendasi</h2>
-          <Link href="/products" className="text-[11px] text-primary font-medium flex items-center gap-0.5">
+          <h2 className="text-[13px] font-bold text-foreground">Semua Produk</h2>
+          <Link href="/products" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
             Lihat Semua <ChevronRight size={11} />
           </Link>
         </div>
