@@ -111,33 +111,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 4. PRODUK REKOMENDASI (grid) ── */}
-      <section className="mb-2">
-        <div className="px-3 py-2.5 flex items-center justify-between bg-white border-b border-border/40">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center">
-              <Zap size={13} className="text-white fill-white" />
-            </div>
-            <h2 className="text-[13px] font-bold text-foreground">PRODUK REKOMENDASI</h2>
-          </div>
-          <Link href="/products" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
-            Lihat Semua <ChevronRight size={11} />
-          </Link>
-        </div>
-        <div className="bg-white px-3 pt-3 pb-3">
-          <div className="grid grid-cols-2 gap-3">
-            {loadFeatured
-              ? Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-[240px] rounded-xl" />
-                ))
-              : featured?.slice(0, 6).map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 5. PRODUK TERLARIS (horizontal) ── */}
+      {/* ── 4. PRODUK TERLARIS (horizontal) ── */}
       <section className="bg-white mb-2">
         <div className="px-3 pt-3 pb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -158,6 +132,32 @@ export default function Home() {
                 ))
               : trending?.map((product) => (
                   <ProductCard key={product.id} product={product} horizontal />
+                ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 5. PRODUK REKOMENDASI (grid) ── */}
+      <section className="mb-2">
+        <div className="px-3 py-2.5 flex items-center justify-between bg-white border-b border-border/40">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center">
+              <Zap size={13} className="text-white fill-white" />
+            </div>
+            <h2 className="text-[13px] font-bold text-foreground">PRODUK REKOMENDASI</h2>
+          </div>
+          <Link href="/products" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
+            Lihat Semua <ChevronRight size={11} />
+          </Link>
+        </div>
+        <div className="bg-white px-3 pt-3 pb-3">
+          <div className="grid grid-cols-2 gap-3">
+            {loadFeatured
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-[240px] rounded-xl" />
+                ))
+              : featured?.slice(0, 6).map((product) => (
+                  <ProductCard key={product.id} product={product} />
                 ))}
           </div>
         </div>
