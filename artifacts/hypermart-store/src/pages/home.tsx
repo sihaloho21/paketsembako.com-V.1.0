@@ -2,7 +2,6 @@ import {
   useGetFeaturedProducts,
   useGetPromoProducts,
   useGetTrendingProducts,
-  useListCategories,
 } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/product-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,7 +23,6 @@ export default function Home() {
   const { data: featured, isLoading: loadFeatured } = useGetFeaturedProducts();
   const { data: promos, isLoading: loadPromos } = useGetPromoProducts();
   const { data: trending, isLoading: loadTrending } = useGetTrendingProducts();
-  const { data: categories, isLoading: loadCategories } = useListCategories();
 
   return (
     <div className="bg-slate-100 pb-24">
@@ -163,33 +161,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 6. KATEGORI PRODUK ── */}
-      <section className="mb-2 bg-white">
-        <div className="px-3 pt-3 pb-2 flex items-center justify-between border-b border-border/40">
-          <h2 className="text-[13px] font-bold text-foreground">KATEGORI PRODUK</h2>
-          <Link href="/categories" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
-            Lihat Semua <ChevronRight size={11} />
-          </Link>
-        </div>
-        <div className="px-3 pt-1 pb-3">
-          <div className="grid grid-cols-2 gap-x-4">
-            {loadCategories
-              ? Array.from({ length: 12 }).map((_, i) => (
-                  <Skeleton key={i} className="h-8 mb-1 rounded" />
-                ))
-              : categories?.slice(0, 14).map((cat) => (
-                  <Link key={cat.id} href="/categories">
-                    <div className="py-2.5 border-b border-border/40 text-[12px] font-medium text-foreground hover:text-primary transition-colors flex items-center justify-between">
-                      {cat.name}
-                      <ChevronRight size={10} className="text-muted-foreground" />
-                    </div>
-                  </Link>
-                ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 7. Kamu Mungkin Suka ── */}
+      {/* ── 6. Kamu Mungkin Suka ── */}
       <section className="bg-white mb-2">
         <div className="px-3 pt-3 pb-2 flex items-center justify-between">
           <h2 className="text-[13px] font-bold text-foreground">Kamu Mungkin Suka</h2>
