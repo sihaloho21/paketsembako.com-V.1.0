@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Search, ChevronDown, MessageCircle, UserCheck } from "lucide-react";
+import { Search, ChevronDown, Sprout, Coins, Ticket, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -59,22 +59,22 @@ export function Header({ scrolled = false }: HeaderProps) {
           </div>
         </Link>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            data-testid="button-mengikuti"
-            className="flex items-center gap-1 bg-white text-primary text-[11px] font-bold px-2.5 py-1.5 rounded border border-white/80 shadow-sm"
-          >
-            <UserCheck size={11} />
-            Mengikuti
+        {/* Icon action buttons */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button data-testid="icon-level" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
+            <Sprout size={17} className="text-white" />
           </button>
-          <button
-            data-testid="button-chat"
-            className="flex items-center gap-1 bg-primary text-white text-[11px] font-bold px-2.5 py-1.5 rounded border border-white/50"
-          >
-            <MessageCircle size={11} />
-            Chat
+          <button data-testid="icon-poin" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
+            <Coins size={17} className="text-white" />
           </button>
+          <button data-testid="icon-voucher" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
+            <Ticket size={17} className="text-white" />
+          </button>
+          <Link href="/account">
+            <div data-testid="icon-akun" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
+              <UserCircle2 size={17} className="text-white" />
+            </div>
+          </Link>
         </div>
       </div>
 
