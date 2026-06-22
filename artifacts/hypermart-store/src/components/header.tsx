@@ -15,9 +15,9 @@ interface HeaderProps {
 export function Header({ scrolled = false }: HeaderProps) {
   const [location] = useLocation();
   const isDetail = location.startsWith("/product/");
-  const isAccount = location === "/account";
+  const isHidden = isDetail || location === "/account" || location === "/poin";
 
-  if (isDetail || isAccount) return null;
+  if (isHidden) return null;
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm overflow-hidden">
@@ -64,9 +64,11 @@ export function Header({ scrolled = false }: HeaderProps) {
           <button data-testid="icon-level" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
             <Sprout size={17} className="text-white" />
           </button>
-          <button data-testid="icon-poin" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
-            <Coins size={17} className="text-white" />
-          </button>
+          <Link href="/poin">
+            <div data-testid="icon-poin" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
+              <Coins size={17} className="text-white" />
+            </div>
+          </Link>
           <button data-testid="icon-voucher" className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95">
             <Ticket size={17} className="text-white" />
           </button>
