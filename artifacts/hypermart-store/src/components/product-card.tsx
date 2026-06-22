@@ -1,10 +1,10 @@
+import { useState, useRef } from "react";
 import { Product } from "@workspace/api-client-react/src/generated/api.schemas";
 import { formatPrice } from "@/lib/format";
 import { Link } from "wouter";
-import { Plus, Star } from "lucide-react";
+import { Plus, Check, Star } from "lucide-react";
 import { useAddToCart, getGetCartQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
@@ -17,23 +17,40 @@ export function ProductCard({ product, className, horizontal }: ProductCardProps
   const queryClient = useQueryClient();
   const addToCart = useAddToCart();
 
+  const [anim, setAnim] = useState<"idle" | "popping" | "done">("idle");
+  const [showFloat, setShowFloat] = useState(false);
+  const [showRipple, setShowRipple] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+    if (anim !== "idle") return;
+
+    // Trigger animations
+    setAnim("popping");
+    setShowFloat(true);
+    setShowRipple(true);
+
+    setTimeout(() => setShowRipple(false), 500);
+    setTimeout(() => setAnim("done"), 420);
+    setTimeout(() => setShowFloat(false), 650);
+
+    // Reset button after brief checkmark display
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setAnim("idle"), 1400);
+
     addToCart.mutate(
       { data: { productId: product.id, quantity: 1 } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });
-          toast.success("Ditambahkan ke keranjang", {
-            description: product.name,
-            duration: 2000,
-          });
-        }
+        },
       }
     );
   };
+
+  const isDone = anim === "done";
 
   return (
     <Link href={`/product/${product.id}`} className="block">
@@ -43,8 +60,8 @@ export function ProductCard({ product, className, horizontal }: ProductCardProps
         className
       )}>
         <div className="relative aspect-square w-full bg-slate-50 p-2 flex items-center justify-center">
-          <img 
-            src={product.imageUrl} 
+          <img
+            src={product.imageUrl}
             alt={product.name}
             className="object-contain h-full w-full mix-blend-multiply"
             loading="lazy"
@@ -55,18 +72,18 @@ export function ProductCard({ product, className, horizontal }: ProductCardProps
           <h3 className="text-xs font-medium text-foreground line-clamp-2 h-[32px] leading-tight mb-1">
             {product.name}
           </h3>
-          
+
           <div className="mt-auto">
             {product.originalPrice ? (
               <div className="text-[10px] text-muted-foreground line-through decoration-red-500 decoration-1">
                 {formatPrice(product.originalPrice)}
               </div>
             ) : <div className="h-[15px]" />}
-            
+
             <div className="text-sm font-bold text-foreground">
               {formatPrice(product.price)}
             </div>
-            
+
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
@@ -79,14 +96,37 @@ export function ProductCard({ product, className, horizontal }: ProductCardProps
         </div>
 
         {/* Add Button */}
-        <button 
-          onClick={handleAdd}
-          disabled={addToCart.isPending}
-          className="absolute bottom-2 right-2 bg-[#16A34A] text-white rounded-full p-1.5 shadow-sm hover:bg-[#15803D] active:scale-95 transition-all disabled:opacity-50"
-          aria-label="Add to cart"
-        >
-          <Plus size={16} strokeWidth={3} />
-        </button>
+        <div className="absolute bottom-2 right-2">
+          {/* Floating +1 label */}
+          {showFloat && (
+            <span className="animate-float-up absolute -top-1 left-1/2 -translate-x-1/2 text-[11px] font-black text-green-600 pointer-events-none select-none whitespace-nowrap">
+              +1
+            </span>
+          )}
+
+          {/* Ripple ring */}
+          {showRipple && (
+            <span className="animate-ripple-out absolute inset-0 rounded-full border-2 border-green-400 pointer-events-none" />
+          )}
+
+          <button
+            onClick={handleAdd}
+            disabled={addToCart.isPending}
+            className={cn(
+              "relative flex items-center justify-center rounded-full p-1.5 shadow-sm transition-colors disabled:opacity-50",
+              anim === "popping" && "animate-cart-pop",
+              isDone
+                ? "bg-green-100 text-green-600"
+                : "bg-[#16A34A] text-white hover:bg-[#15803D]"
+            )}
+            aria-label="Add to cart"
+          >
+            {isDone
+              ? <Check size={16} strokeWidth={3} className="text-green-600" />
+              : <Plus size={16} strokeWidth={3} />
+            }
+          </button>
+        </div>
       </div>
     </Link>
   );
