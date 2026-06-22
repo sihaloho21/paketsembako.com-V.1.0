@@ -47,7 +47,21 @@ router.get("/products", async (req, res) => {
   }
 
   let rows;
-  if (sort === "harga") {
+  if (sort === "harga-asc") {
+    rows = await db
+      .select()
+      .from(productsTable)
+      .where(conditions.length ? conditions[0] : undefined)
+      .orderBy(asc(productsTable.price))
+      .limit(limit ? Number(limit) : 50);
+  } else if (sort === "harga-desc") {
+    rows = await db
+      .select()
+      .from(productsTable)
+      .where(conditions.length ? conditions[0] : undefined)
+      .orderBy(desc(productsTable.price))
+      .limit(limit ? Number(limit) : 50);
+  } else if (sort === "harga") {
     rows = await db
       .select()
       .from(productsTable)
