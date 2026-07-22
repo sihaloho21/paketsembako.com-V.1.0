@@ -12,7 +12,7 @@ export default function Products() {
   const [activeTab, setActiveTab] = useState<MainTab>("popular");
   const [priceDir, setPriceDir] = useState<PriceDir>("harga-asc");
 
-  const sortParam = activeTab === "harga" ? priceDir : activeTab;
+  const sortParam = activeTab === "harga" ? "harga" : activeTab;
 
   const { data: products, isLoading } = useListProducts({ sort: sortParam });
 
