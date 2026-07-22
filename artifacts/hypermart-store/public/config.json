@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "apiBaseUrl": "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/usercontent",
+  "apiTimeout": 30000,
+  "features": {
+    "cart": true,
+    "wishlist": false,
+    "reviews": false
+  }
+}
