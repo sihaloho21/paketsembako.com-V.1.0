@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Minus, Plus, Zap, Sun, Calendar } from "lucide-react";
-import { Product, ProductVariant } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Product } from "@workspace/api-client-react";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +36,7 @@ export function VariantSheet({ product, open, onClose, onConfirm, isPending }: V
     if (open) {
       setMounted(true);
       requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
+      return undefined;
     } else {
       setVisible(false);
       const t = setTimeout(() => setMounted(false), 300);

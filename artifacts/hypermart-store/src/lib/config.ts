@@ -61,8 +61,9 @@ export async function loadConfig(): Promise<AppConfig> {
     const cachedData = localStorage.getItem(CONFIG_CACHE_KEY);
     if (cachedData) {
       console.log("Using cached config");
-      cachedConfig = JSON.parse(cachedData);
-      return cachedConfig;
+      const parsedConfig = JSON.parse(cachedData) as AppConfig;
+      cachedConfig = parsedConfig;
+      return parsedConfig;
     }
 
     // Fallback ke default config

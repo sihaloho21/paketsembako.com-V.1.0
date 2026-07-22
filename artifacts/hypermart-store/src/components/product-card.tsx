@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Product } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { Product } from "@workspace/api-client-react";
 import { formatPrice } from "@/lib/format";
 import { Link } from "wouter";
 import { Plus, Check, Star } from "lucide-react";
