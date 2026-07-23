@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { Minus, Plus, Zap, Sun, Calendar } from "lucide-react";
-import type { Product } from "@workspace/api-client-react";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface VariantSheetProps {
-  product: Product;
+  product: any;
   open: boolean;
   onClose: () => void;
   onConfirm: (variantId: number, quantity: number) => void;
@@ -46,7 +45,7 @@ export function VariantSheet({ product, open, onClose, onConfirm, isPending }: V
 
   if (!mounted) return null;
 
-  const selected = variants.find((v) => v.id === selectedId);
+  const selected = variants.find((v: any) => v.id === selectedId);
   const price = selected?.price ?? product.price;
 
   return (
@@ -93,7 +92,7 @@ export function VariantSheet({ product, open, onClose, onConfirm, isPending }: V
           <div className="mt-3">
             <p className="text-xs font-bold text-foreground mb-2">Pilih varian</p>
             <div className="flex flex-wrap gap-2">
-              {variants.map((v) => (
+              {variants.map((v: any) => (
                 <button
                   key={v.id}
                   onClick={() => setSelectedId(v.id)}

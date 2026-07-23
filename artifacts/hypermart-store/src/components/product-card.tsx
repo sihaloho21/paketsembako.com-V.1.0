@@ -1,22 +1,19 @@
 import { useState, useRef } from "react";
-import type { Product } from "@workspace/api-client-react";
 import { formatPrice } from "@/lib/format";
 import { Link } from "wouter";
 import { Plus, Check, Star } from "lucide-react";
-import { useAddToCart, getGetCartQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useCart } from "@/hooks/use-cart";
 import { cn } from "@/lib/utils";
 import { VariantSheet } from "./variant-sheet";
 
 interface ProductCardProps {
-  product: Product;
+  product: any;
   className?: string;
   horizontal?: boolean;
 }
 
 export function ProductCard({ product, className, horizontal }: ProductCardProps) {
-  const queryClient = useQueryClient();
-  const addToCart = useAddToCart();
+  const { addToCart } = useCart();
 
   const [anim, setAnim] = useState<"idle" | "popping" | "done">("idle");
   const [showFloat, setShowFloat] = useState(false);
@@ -48,23 +45,13 @@ export function ProductCard({ product, className, horizontal }: ProductCardProps
     }
 
     triggerSuccessAnim();
-    addToCart.mutate(
-      { data: { productId: product.id, quantity: 1 } },
-      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() }) }
-    );
+    addToCart(product.id, 1);
   };
 
   const handleSheetConfirm = (variantId: number, quantity: number) => {
-    addToCart.mutate(
-      { data: { productId: product.id, quantity, variantId } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });
-          setSheetOpen(false);
-          triggerSuccessAnim();
-        },
-      }
-    );
+    addToCart(product.id, quantity, variantId);
+    setSheetOpen(false);
+    triggerSuccessAnim();
   };
 
   const isDone = anim === "done";
@@ -125,7 +112,6 @@ export function ProductCard({ product, className, horizontal }: ProductCardProps
             )}
             <button
               onClick={handleAdd}
-              disabled={addToCart.isPending && !hasMultipleVariants}
               className={cn(
                 "relative flex items-center justify-center rounded-full p-1.5 shadow-sm transition-colors disabled:opacity-50",
                 anim === "popping" && "animate-cart-pop",
@@ -151,7 +137,7 @@ export function ProductCard({ product, className, horizontal }: ProductCardProps
           open={sheetOpen}
           onClose={() => setSheetOpen(false)}
           onConfirm={handleSheetConfirm}
-          isPending={addToCart.isPending}
+          isPending={false}
         />
       )}
     </>

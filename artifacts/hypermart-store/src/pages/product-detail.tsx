@@ -1,14 +1,14 @@
-import { useGetProduct, useAddToCart, getGetCartQueryKey } from "@workspace/api-client-react";
+import { useGetProduct } from "@/hooks/use-gas-api";
 import { useRoute, Link } from "wouter";
 import { ChevronLeft, Share2, ShoppingBag, Minus, Plus, Heart } from "lucide-react";
 import { formatPrice } from "@/lib/format";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { ProductCard } from "@/components/product-card";
 import { Badge } from "@/components/ui/badge";
+import { useCart } from "@/hooks/use-cart";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/product/:id");
@@ -18,8 +18,7 @@ export default function ProductDetail() {
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
   
-  const queryClient = useQueryClient();
-  const addToCart = useAddToCart();
+  const { addToCart } = useCart();
 
   if (isLoading) {
     return (
@@ -59,28 +58,15 @@ export default function ProductDetail() {
   }
 
   const activePrice = selectedVariant 
-    ? product.variants?.find(v => v.id === selectedVariant)?.price || product.price
+    ? product.variants?.find((v: any) => v.id === selectedVariant)?.price || product.price
     : product.price;
 
   const handleAdd = () => {
-    addToCart.mutate(
-      { 
-        data: { 
-          productId: product.id, 
-          quantity,
-          variantId: selectedVariant 
-        } 
-      },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });
-          toast.success("Ditambahkan ke keranjang", {
-            description: `${quantity}x ${product.name}`,
-          });
-          setQuantity(1);
-        }
-      }
-    );
+    addToCart(product.id, quantity, selectedVariant);
+    toast.success("Ditambahkan ke keranjang", {
+      description: `${quantity}x ${product.name}`,
+    });
+    setQuantity(1);
   };
 
   return (
@@ -126,10 +112,10 @@ export default function ProductDetail() {
       {product.variants && product.variants.length > 0 && (
         <div className="bg-white border-t border-border px-4 pt-3 pb-3">
           <div className="flex items-end gap-2 overflow-x-auto hide-scrollbar pb-1">
-            {product.variants.map((v) => {
+            {product.variants.map((v: any) => {
               const isSelected = selectedVariant === v.id;
               const isLowest = product.variants
-                ? v.price === Math.min(...product.variants.map((x) => x.price))
+                ? v.price === Math.min(...product.variants.map((x: any) => x.price))
                 : false;
               const showPromoBadge = isSelected && !!product.discountPercent;
               const showBestBadge = isLowest && !isSelected;
@@ -237,7 +223,7 @@ export default function ProductDetail() {
           </div>
           <div className="overflow-x-auto pb-4 px-4 hide-scrollbar">
             <div className="flex gap-3 w-max">
-              {product.relatedProducts.map((p) => (
+              {product.relatedProducts.map((p: any) => (
                 <ProductCard key={p.id} product={p} horizontal />
               ))}
             </div>
@@ -271,9 +257,8 @@ export default function ProductDetail() {
         <button 
           className="flex-1 h-12 bg-[#16A34A] text-white rounded-xl font-bold text-sm shadow-sm hover:bg-[#15803D] active:scale-[0.98] transition-all disabled:opacity-70 disabled:active:scale-100 flex items-center justify-center gap-2"
           onClick={handleAdd}
-          disabled={addToCart.isPending}
         >
-          {addToCart.isPending ? "Memproses..." : "+ Tambah Produk"}
+          + Tambah Produk
         </button>
       </div>
     </div>
