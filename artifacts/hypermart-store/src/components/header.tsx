@@ -2,7 +2,8 @@ import { Link, useLocation } from "wouter";
 import { Search, ChevronDown, Sprout, Coins, Ticket, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGetUser } from "@/hooks/use-gas-api";
-import { useEffect, useState } from "react";
+import { useUserId } from "@/hooks/use-user-id";
+import { HeaderUserSkeleton } from "@/components/skeletons";
 
 const tabs = [
   { name: "Toko", path: "/" },
@@ -14,12 +15,9 @@ interface HeaderProps {
   scrolled?: boolean;
 }
 
-// Default user ID for demo (in production, this would come from auth context)
-const DEFAULT_USER_ID = "user-1";
-
 export function Header({ scrolled = false }: HeaderProps) {
   const [location] = useLocation();
-  const [userId, setUserId] = useState(DEFAULT_USER_ID);
+  const { userId, isLoaded } = useUserId();
   const { data: user, isLoading } = useGetUser(userId);
   
   const isDetail = location.startsWith("/product/");
@@ -41,6 +39,7 @@ export function Header({ scrolled = false }: HeaderProps) {
 
   const userInitial = user?.name ? getInitials(user.name) : "U";
   const userName = user?.name || "User";
+  const isLoadingUser = isLoading || !isLoaded;
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm overflow-hidden">
@@ -63,28 +62,32 @@ export function Header({ scrolled = false }: HeaderProps) {
         )}
       >
         {/* Clickable avatar + name → /account */}
-        <Link href="/account" className="flex items-center gap-2 flex-1 min-w-0">
-          <div
-            data-testid="avatar-user"
-            className="w-9 h-9 rounded-full bg-white/25 border-2 border-white/50 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
-          >
-            <span className="text-white font-bold text-sm">{userInitial}</span>
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1">
-              <span className="text-white font-bold text-sm leading-tight">
-                {isLoading ? "Loading..." : userName}
-              </span>
-              <ChevronDown size={13} className="text-white/80" />
+        {isLoadingUser ? (
+          <HeaderUserSkeleton />
+        ) : (
+          <Link href="/account" className="flex items-center gap-2 flex-1 min-w-0">
+            <div
+              data-testid="avatar-user"
+              className="w-9 h-9 rounded-full bg-white/25 border-2 border-white/50 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+            >
+              <span className="text-white font-bold text-sm">{userInitial}</span>
             </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full" />
-              <span className="text-white/90 text-[10px] font-semibold">
-                {isLoading ? "..." : formattedPoints} Point
-              </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1">
+                <span className="text-white font-bold text-sm leading-tight">
+                  {userName}
+                </span>
+                <ChevronDown size={13} className="text-white/80" />
+              </div>
+              <div className="flex items-center gap-1 mt-0.5">
+                <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full" />
+                <span className="text-white/90 text-[10px] font-semibold">
+                  {formattedPoints} Point
+                </span>
+              </div>
             </div>
-          </div>
-        </Link>
+          </Link>
+        )}
 
         {/* Icon action buttons */}
         <div className="flex items-center gap-2 shrink-0">

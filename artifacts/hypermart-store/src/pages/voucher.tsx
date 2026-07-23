@@ -3,9 +3,8 @@ import { ChevronLeft, ChevronRight, Clock, ShoppingCart, Ticket } from "lucide-r
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { useGetUserVouchers } from "@/hooks/use-gas-api";
-
-// Default user ID for demo (in production, this would come from auth context)
-const DEFAULT_USER_ID = "user-1";
+import { useUserId } from "@/hooks/use-user-id";
+import { VoucherCardSkeleton } from "@/components/skeletons";
 
 const tabs = ["Bisa Digunakan", "Tidak Bisa Digunakan", "Sudah Digunakan"];
 
@@ -40,7 +39,7 @@ const getVoucherColor = (type: string): string => {
 
 export default function Voucher() {
   const [activeTab, setActiveTab] = useState(0);
-  const [userId] = useState(DEFAULT_USER_ID);
+  const { userId, isLoaded } = useUserId();
   
   const { data: userVouchers, isLoading } = useGetUserVouchers(userId);
 
@@ -111,8 +110,10 @@ export default function Voucher() {
       <div className="px-4 mt-4 flex flex-col gap-3 pb-8">
         {/* Loading state */}
         {isLoading && (
-          <div className="flex justify-center py-8">
-            <div className="text-sm text-muted-foreground">Loading vouchers...</div>
+          <div className="flex flex-col gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <VoucherCardSkeleton key={i} />
+            ))}
           </div>
         )}
 

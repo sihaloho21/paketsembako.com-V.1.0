@@ -2,13 +2,13 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Coins, Sprout } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGetUser, useGetAvailableVouchers } from "@/hooks/use-gas-api";
+import { useUserId } from "@/hooks/use-user-id";
 import { useToast } from "@/hooks/use-toast";
+import { VoucherCardSkeleton, Skeleton } from "@/components/skeletons";
 import * as gasApi from "@/lib/gas-api";
+import { useQueryClient } from "@tanstack/react-query";
 
 const filters = ["All", "Voucher Belanja", "Merchandise"];
-
-// Default user ID for demo (in production, this would come from auth context)
-const DEFAULT_USER_ID = "user-1";
 
 function formatPoints(n: number) {
   return n.toLocaleString("id-ID");
@@ -16,9 +16,10 @@ function formatPoints(n: number) {
 
 export default function Poin() {
   const [activeFilter, setActiveFilter] = useState("All");
-  const [userId] = useState(DEFAULT_USER_ID);
+  const { userId, isLoaded } = useUserId();
   const [isRedeeming, setIsRedeeming] = useState<number | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { data: user, isLoading: userLoading } = useGetUser(userId);
   const { data: vouchers, isLoading: vouchersLoading } = useGetAvailableVouchers();
@@ -40,7 +41,11 @@ export default function Poin() {
       
       if (result.success) {
         toast.success(`Voucher "${voucherTitle}" berhasil ditukar! Kode: ${result.voucherCode}`);
-        // Optionally refetch user data to update points
+        
+        // Invalidate queries untuk refresh data
+        await queryClient.invalidateQueries({ queryKey: ["user", userId] });
+        await queryClient.invalidateQueries({ queryKey: ["userVouchers", userId] });
+        await queryClient.invalidateQueries({ queryKey: ["pointsHistory", userId] });
       } else {
         toast.error(result.message || "Gagal menukar voucher");
       }
@@ -53,6 +58,7 @@ export default function Poin() {
     }
   };
 
+  const isLoadingUser = userLoading || !isLoaded;
   const userPoints = user?.points || 0;
   const userPointsFormatted = formatPoints(userPoints);
 
@@ -83,7 +89,11 @@ export default function Poin() {
 
         <p className="text-white/80 text-xs font-medium mb-1">Total Poin</p>
         <h1 className="text-white text-3xl font-black tracking-tight mb-1">
-          {userLoading ? "Loading..." : `${userPointsFormatted} Poin`}
+          {isLoadingUser ? (
+            <Skeleton className="h-8 w-40" />
+          ) : (
+            `${userPointsFormatted} Poin`
+          )}
         </h1>
         <p className="text-white/70 text-[11px] mb-4">
           Kadaluarsa 20 September 2026
@@ -155,8 +165,10 @@ export default function Poin() {
 
         {/* Loading state */}
         {vouchersLoading && (
-          <div className="flex justify-center py-8">
-            <div className="text-sm text-muted-foreground">Loading vouchers...</div>
+          <div className="flex flex-col gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <VoucherCardSkeleton key={i} />
+            ))}
           </div>
         )}
 
