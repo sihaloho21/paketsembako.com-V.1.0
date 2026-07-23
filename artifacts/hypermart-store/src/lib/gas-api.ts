@@ -1,6 +1,5 @@
 /**
  * Google Apps Script API Wrapper
- * Menyediakan helper functions untuk memanggil endpoint Google Apps Script
  */
 
 import { getConfig } from "./config";
@@ -10,9 +9,6 @@ export interface GASRequestParams {
   [key: string]: string | number | boolean | undefined;
 }
 
-/**
- * Helper untuk membuat URL dengan query parameters
- */
 function buildQueryString(params: GASRequestParams): string {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -25,10 +21,8 @@ function buildQueryString(params: GASRequestParams): string {
 
 /**
  * Fetch data dari Google Apps Script
- * @param params - Object berisi action dan parameter lainnya
- * @returns Promise dengan data yang di-return dari GAS
  */
-export async function callGAS<T = any>(params: GASRequestParams): Promise<T> {
+export async function callGAS<T = any>(params: GASRequestParams, body?: any): Promise<T> {
   const config = getConfig();
   if (!config) {
     throw new Error("Config not loaded. Call setupApiClient() first.");
@@ -39,12 +33,13 @@ export async function callGAS<T = any>(params: GASRequestParams): Promise<T> {
 
   try {
     const response = await fetch(url, {
-      method: "GET",
+      method: body ? "POST" : "GET",
       mode: "cors",
       cache: "no-cache",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "text/plain;charset=utf-8", // GAS expects text/plain for POST to avoid CORS preflight
       },
+      body: body ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
@@ -59,9 +54,6 @@ export async function callGAS<T = any>(params: GASRequestParams): Promise<T> {
   }
 }
 
-/**
- * Fetch semua produk dengan filter opsional
- */
 export async function getProducts(filters?: {
   categoryId?: number;
   sort?: string;
@@ -69,59 +61,36 @@ export async function getProducts(filters?: {
   isTrending?: boolean;
   limit?: number;
 }) {
-  return callGAS({
-    action: "getProducts",
-    ...filters,
-  });
+  return callGAS({ action: "getProducts", ...filters });
 }
 
-/**
- * Fetch detail produk berdasarkan ID
- */
 export async function getProduct(id: number) {
-  return callGAS({
-    action: "getProduct",
-    id,
-  });
+  return callGAS({ action: "getProduct", id });
 }
 
-/**
- * Fetch produk featured
- */
 export async function getFeaturedProducts() {
-  return callGAS({
-    action: "getProducts",
-    limit: 10,
-  });
+  return callGAS({ action: "getProducts", limit: 10 });
 }
 
-/**
- * Fetch produk promo
- */
 export async function getPromoProducts() {
-  return callGAS({
-    action: "getProducts",
-    isPromo: true,
-    limit: 10,
-  });
+  return callGAS({ action: "getProducts", isPromo: true, limit: 10 });
 }
 
-/**
- * Fetch produk trending
- */
 export async function getTrendingProducts() {
-  return callGAS({
-    action: "getProducts",
-    isTrending: true,
-    limit: 10,
-  });
+  return callGAS({ action: "getProducts", isTrending: true, limit: 10 });
+}
+
+export async function getCategories() {
+  return callGAS({ action: "getCategories" });
 }
 
 /**
- * Fetch semua kategori
+ * Sync cart with GAS backend
  */
-export async function getCategories() {
-  return callGAS({
-    action: "getCategories",
-  });
+export async function fetchCart(userId: string) {
+  return callGAS({ action: "getCart", userId });
+}
+
+export async function saveCartToBackend(userId: string, cart: any) {
+  return callGAS({ action: "saveCart" }, { action: "saveCart", userId, cart });
 }

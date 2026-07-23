@@ -2,8 +2,6 @@ const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID'; // Ganti dengan ID Google Spreadsh
 
 /**
  * Fungsi utama untuk menangani request GET.
- * @param {Object} e - Objek event dari request GET.
- * @returns {GoogleAppsScript.Content.TextOutput} Output JSON.
  */
 function doGet(e) {
   const action = e.parameter.action;
@@ -20,6 +18,9 @@ function doGet(e) {
       case 'getCategories':
         result = getCategories();
         break;
+      case 'getCart':
+        result = getCart(e.parameter.userId);
+        break;
       default:
         return createErrorResponse('Invalid action: ' + action, 400);
     }
@@ -30,33 +31,38 @@ function doGet(e) {
 }
 
 /**
- * Membuat response JSON.
- * @param {Object} data - Data yang akan di-return.
- * @returns {GoogleAppsScript.Content.TextOutput} Output JSON.
+ * Fungsi utama untuk menangani request POST.
  */
+function doPost(e) {
+  try {
+    const postData = JSON.parse(e.postData.contents);
+    const action = postData.action;
+    let result;
+
+    switch (action) {
+      case 'saveCart':
+        result = saveCart(postData.userId, postData.cart);
+        break;
+      default:
+        return createErrorResponse('Invalid action: ' + action, 400);
+    }
+    return createJsonResponse(result);
+  } catch (error) {
+    return createErrorResponse(error.message, 500);
+  }
+}
+
 function createJsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-/**
- * Membuat response error JSON.
- * @param {string} message - Pesan error.
- * @param {number} statusCode - Kode status HTTP.
- * @returns {GoogleAppsScript.Content.TextOutput} Output JSON error.
- */
 function createErrorResponse(message, statusCode) {
   const error = { error: message, statusCode: statusCode };
   return ContentService.createTextOutput(JSON.stringify(error))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-/**
- * Mendapatkan atau membuat sheet berdasarkan nama dan header.
- * @param {string} sheetName - Nama sheet.
- * @param {Array<string>} headers - Array header kolom.
- * @returns {GoogleAppsScript.Spreadsheet.Sheet} Objek sheet.
- */
 function getOrCreateSheet(sheetName, headers) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(sheetName);
@@ -64,25 +70,10 @@ function getOrCreateSheet(sheetName, headers) {
   if (!sheet) {
     sheet = ss.insertSheet(sheetName);
     sheet.appendRow(headers);
-    Logger.log(`Sheet '${sheetName}' created with headers: ${headers.join(', ')}`);
-  } else {
-    // Cek apakah header sudah sesuai
-    const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    if (JSON.stringify(existingHeaders) !== JSON.stringify(headers)) {
-      Logger.log(`Headers for sheet '${sheetName}' are different. Updating headers.`);
-      sheet.clearContents(); // Clear existing content
-      sheet.appendRow(headers); // Write new headers
-    }
   }
   return sheet;
 }
 
-/**
- * Mengambil semua produk dari sheet 'Products'.
- * Mendukung filter categoryId, sort, isPromo, isTrending, limit.
- * @param {Object} params - Parameter filter dari request.
- * @returns {Array<Object>} Array objek produk.
- */
 function getProducts(params) {
   const productHeaders = [
     'id', 'name', 'price', 'originalPrice', 'discountPercent', 'imageUrl', 'images', 
@@ -91,7 +82,7 @@ function getProducts(params) {
   ];
   const sheet = getOrCreateSheet('Products', productHeaders);
   const data = sheet.getDataRange().getValues();
-  const headers = data.shift(); // Baris pertama adalah header
+  const headers = data.shift();
   const products = [];
 
   for (let i = 0; i < data.length; i++) {
@@ -99,98 +90,48 @@ function getProducts(params) {
     const product = {};
     for (let j = 0; j < headers.length; j++) {
       let value = row[j];
-      // Konversi tipe data dari string/number di spreadsheet ke tipe yang sesuai
-      if (headers[j] === 'id' || headers[j] === 'price' || headers[j] === 'originalPrice' ||
-          headers[j] === 'discountPercent' || headers[j] === 'categoryId' ||
-          headers[j] === 'reviewCount' || headers[j] === 'sold') {
+      if (['id', 'price', 'originalPrice', 'discountPercent', 'categoryId', 'reviewCount', 'sold'].includes(headers[j])) {
         value = parseInt(value);
       } else if (headers[j] === 'rating') {
         value = parseFloat(value);
       } else if (headers[j] === 'isPromo') {
         value = String(value).toLowerCase() === 'true';
-      } else if (headers[j] === 'images' || headers[j] === 'variants') {
-        try {
-          value = JSON.parse(value);
-        } catch (e) {
-          value = []; // Default ke array kosong jika parsing gagal
-        }
+      } else if (['images', 'variants'].includes(headers[j])) {
+        try { value = JSON.parse(value); } catch (e) { value = []; }
       }
       product[headers[j]] = value;
     }
     products.push(product);
   }
 
-  // Apply filters
   let filteredProducts = products;
+  if (params.categoryId) filteredProducts = filteredProducts.filter(p => p.categoryId === parseInt(params.categoryId));
+  if (params.isPromo) filteredProducts = filteredProducts.filter(p => p.isPromo === (String(params.isPromo).toLowerCase() === 'true'));
+  if (params.isTrending) filteredProducts.sort((a, b) => b.sold - a.sold);
 
-  if (params.categoryId) {
-    const categoryId = parseInt(params.categoryId);
-    filteredProducts = filteredProducts.filter(p => p.categoryId === categoryId);
-  }
-  if (params.isPromo) {
-    filteredProducts = filteredProducts.filter(p => p.isPromo === (String(params.isPromo).toLowerCase() === 'true'));
-  }
-  // Untuk isTrending, kita bisa asumsikan produk dengan 'sold' tertinggi atau rating tertinggi
-  if (params.isTrending) {
-    filteredProducts = filteredProducts.sort((a, b) => b.sold - a.sold);
-  }
-
-  // Apply sorting
   if (params.sort) {
-    switch (params.sort) {
-      case 'harga-asc':
-        filteredProducts.sort((a, b) => a.price - b.price);
-        break;
-      case 'harga-desc':
-        filteredProducts.sort((a, b) => b.price - a.price);
-        break;
-      case 'terbaru':
-        // Asumsi ada kolom 'createdAt' atau 'id' yang bisa digunakan untuk sorting terbaru
-        // Untuk saat ini, kita bisa sort berdasarkan ID tertinggi sebagai proxy
-        filteredProducts.sort((a, b) => b.id - a.id);
-        break;
-      case 'teratas':
-        filteredProducts.sort((a, b) => b.rating - a.rating);
-        break;
-      default:
-        // No specific sort
-        break;
-    }
+    if (params.sort === 'harga-asc') filteredProducts.sort((a, b) => a.price - b.price);
+    else if (params.sort === 'harga-desc') filteredProducts.sort((a, b) => b.price - a.price);
+    else if (params.sort === 'terbaru') filteredProducts.sort((a, b) => b.id - a.id);
+    else if (params.sort === 'teratas') filteredProducts.sort((a, b) => b.rating - a.rating);
   }
 
-  // Apply limit
-  if (params.limit) {
-    const limit = parseInt(params.limit);
-    filteredProducts = filteredProducts.slice(0, limit);
-  }
-
+  if (params.limit) filteredProducts = filteredProducts.slice(0, parseInt(params.limit));
   return filteredProducts;
 }
 
-/**
- * Mengambil detail produk berdasarkan ID dari sheet 'Products'.
- * @param {string} id - ID produk.
- * @returns {Object} Objek produk.
- */
 function getProductById(id) {
-  const products = getProducts({}); // Ambil semua produk tanpa filter awal
-  const productId = parseInt(id);
-  const product = products.find(p => p.id === productId);
-  if (!product) {
-    throw new Error('Product not found with ID: ' + id);
-  }
+  const products = getProducts({});
+  const product = products.find(p => p.id === parseInt(id));
+  if (!product) throw new Error('Product not found with ID: ' + id);
   return product;
 }
 
-/**
- * Mengambil semua kategori dari sheet 'Categories'.
- * @returns {Array<Object>} Array objek kategori.
- */
 function getCategories() {
   const categoryHeaders = ['id', 'name', 'productCount', 'imageUrl'];
   const sheet = getOrCreateSheet('Categories', categoryHeaders);
   const data = sheet.getDataRange().getValues();
-  const headers = data.shift(); // Baris pertama adalah header
+  const headers = data.shift();
   const categories = [];
 
   for (let i = 0; i < data.length; i++) {
@@ -198,9 +139,7 @@ function getCategories() {
     const category = {};
     for (let j = 0; j < headers.length; j++) {
       let value = row[j];
-      if (headers[j] === 'id' || headers[j] === 'productCount') {
-        value = parseInt(value);
-      }
+      if (['id', 'productCount'].includes(headers[j])) value = parseInt(value);
       category[headers[j]] = value;
     }
     categories.push(category);
@@ -208,23 +147,48 @@ function getCategories() {
   return categories;
 }
 
-// Fungsi ini akan dijalankan saat Web App di-deploy atau dibuka pertama kali
-function setupInitialSheets() {
-  const productHeaders = [
-    'id', 'name', 'price', 'originalPrice', 'discountPercent', 'imageUrl', 'images', 
-    'categoryId', 'categoryName', 'rating', 'reviewCount', 'sold', 'badge', 
-    'isPromo', 'description', 'shelfLife', 'deliveryInfo', 'variants'
-  ];
-  getOrCreateSheet('Products', productHeaders);
+/**
+ * Mendapatkan data keranjang untuk user tertentu.
+ */
+function getCart(userId) {
+  const cartHeaders = ['userId', 'cartData', 'updatedAt'];
+  const sheet = getOrCreateSheet('Carts', cartHeaders);
+  const data = sheet.getDataRange().getValues();
+  data.shift(); // Remove header
 
-  const categoryHeaders = ['id', 'name', 'productCount', 'imageUrl'];
-  getOrCreateSheet('Categories', categoryHeaders);
+  const userRow = data.find(row => row[0] === userId);
+  if (userRow) {
+    return JSON.parse(userRow[1]);
+  }
+  return { items: [], totalItems: 0, totalPrice: 0 };
 }
 
-// Panggil setupInitialSheets() saat script di-deploy atau di-update
-// Ini akan memastikan sheet dan header ada saat pertama kali digunakan
-// Anda bisa memanggilnya secara manual sekali setelah deployment awal jika diperlukan
-// atau menambahkannya ke fungsi onOpen() jika ingin dijalankan setiap kali spreadsheet dibuka
-// function onOpen() {
-//   setupInitialSheets();
-// }
+/**
+ * Menyimpan data keranjang untuk user tertentu.
+ */
+function saveCart(userId, cart) {
+  const cartHeaders = ['userId', 'cartData', 'updatedAt'];
+  const sheet = getOrCreateSheet('Carts', cartHeaders);
+  const data = sheet.getDataRange().getValues();
+  const headers = data.shift();
+
+  const userRowIndex = data.findIndex(row => row[0] === userId);
+  const now = new Date();
+  const cartJson = JSON.stringify(cart);
+
+  if (userRowIndex > -1) {
+    // Update existing row (row index is 0-based from data, so add 2 for 1-based sheet row)
+    sheet.getRange(userRowIndex + 2, 2).setValue(cartJson);
+    sheet.getRange(userRowIndex + 2, 3).setValue(now);
+  } else {
+    // Append new row
+    sheet.appendRow([userId, cartJson, now]);
+  }
+  return { success: true, cart: cart };
+}
+
+function setupInitialSheets() {
+  getOrCreateSheet('Products', ['id', 'name', 'price', 'originalPrice', 'discountPercent', 'imageUrl', 'images', 'categoryId', 'categoryName', 'rating', 'reviewCount', 'sold', 'badge', 'isPromo', 'description', 'shelfLife', 'deliveryInfo', 'variants']);
+  getOrCreateSheet('Categories', ['id', 'name', 'productCount', 'imageUrl']);
+  getOrCreateSheet('Carts', ['userId', 'cartData', 'updatedAt']);
+}
