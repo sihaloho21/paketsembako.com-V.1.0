@@ -49,3 +49,34 @@ export function useListCategories() {
     queryFn: () => gasApi.getCategories(),
   });
 }
+
+export function useGetUser(id: string) {
+  return useQuery({
+    queryKey: ["user", id],
+    queryFn: () => gasApi.getUser(id),
+    enabled: !!id,
+  });
+}
+
+export function useGetAvailableVouchers() {
+  return useQuery({
+    queryKey: ["vouchers", "available"],
+    queryFn: () => gasApi.getAvailableVouchers(),
+  });
+}
+
+export function useGetUserVouchers(userId: string) {
+  return useQuery({
+    queryKey: ["userVouchers", userId],
+    queryFn: () => gasApi.getUserVouchers(userId),
+    enabled: !!userId,
+  });
+}
+
+export function useGetPointsHistory(userId: string) {
+  return useQuery({
+    queryKey: ["pointsHistory", userId],
+    queryFn: () => gasApi.getPointsHistory(userId),
+    enabled: !!userId,
+  });
+}

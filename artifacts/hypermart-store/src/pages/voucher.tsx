@@ -2,54 +2,59 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Clock, ShoppingCart, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
+import { useGetUserVouchers } from "@/hooks/use-gas-api";
+
+// Default user ID for demo (in production, this would come from auth context)
+const DEFAULT_USER_ID = "user-1";
 
 const tabs = ["Bisa Digunakan", "Tidak Bisa Digunakan", "Sudah Digunakan"];
 
-const vouchers = [
-  {
-    id: 1,
-    color: "bg-green-700",
-    label: "Rp",
-    title: "Diskon 10% hingga Rp50.000",
-    subtitle: "Voucher untuk Transaksi Keduamu!",
-    saving: "Hemat s.d Rp50.000",
-    expiry: "S.d 31/12/26",
-    minBelanja: "Min. Belanja Rp125rb",
-    usable: true,
-  },
-  {
-    id: 2,
-    color: "bg-blue-600",
-    label: "%",
-    title: "Gratis Ongkir hingga Rp20.000",
-    subtitle: "Voucher Gratis Ongkos Kirim",
-    saving: "Hemat s.d Rp20.000",
-    expiry: "S.d 15/07/26",
-    minBelanja: "Min. Belanja Rp50rb",
-    usable: true,
-  },
-  {
-    id: 3,
-    color: "bg-orange-500",
-    label: "Rp",
-    title: "Cashback Rp10.000",
-    subtitle: "Voucher Cashback Spesial Member",
-    saving: "Hemat s.d Rp10.000",
-    expiry: "S.d 30/06/26",
-    minBelanja: "Min. Belanja Rp75rb",
-    usable: false,
-  },
-];
+// Helper function to check if voucher is expired
+const isExpired = (expiryAt: string): boolean => {
+  return new Date(expiryAt) < new Date();
+};
+
+// Helper function to format date
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+};
+
+// Helper function to get voucher color based on type
+const getVoucherColor = (type: string): string => {
+  switch (type) {
+    case "Voucher Belanja":
+      return "bg-green-700";
+    case "Gratis Ongkir":
+      return "bg-blue-600";
+    case "Cashback":
+      return "bg-orange-500";
+    default:
+      return "bg-purple-600";
+  }
+};
 
 export default function Voucher() {
   const [activeTab, setActiveTab] = useState(0);
+  const [userId] = useState(DEFAULT_USER_ID);
+  
+  const { data: userVouchers, isLoading } = useGetUserVouchers(userId);
+
+  // Categorize vouchers by status
+  const activeVouchers = userVouchers?.filter((v: any) => v.status === "Active" && !isExpired(v.expiryAt)) || [];
+  const unusableVouchers = userVouchers?.filter((v: any) => v.status === "Active" && isExpired(v.expiryAt)) || [];
+  const usedVouchers = userVouchers?.filter((v: any) => v.status === "Used") || [];
 
   const displayed =
     activeTab === 0
-      ? vouchers.filter((v) => v.usable)
+      ? activeVouchers
       : activeTab === 1
-      ? vouchers.filter((v) => !v.usable)
-      : [];
+      ? unusableVouchers
+      : usedVouchers;
 
   return (
     <div className="min-h-full bg-slate-50">
@@ -95,7 +100,7 @@ export default function Voucher() {
             {t}
             {i === 0 && (
               <span className="ml-1.5 bg-primary text-white text-[9px] font-black w-4 h-4 rounded-full inline-flex items-center justify-center">
-                {vouchers.filter((v) => v.usable).length}
+                {activeVouchers.length}
               </span>
             )}
           </button>
@@ -104,15 +109,37 @@ export default function Voucher() {
 
       {/* Content */}
       <div className="px-4 mt-4 flex flex-col gap-3 pb-8">
-        {displayed.length === 0 ? (
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex justify-center py-8">
+            <div className="text-sm text-muted-foreground">Loading vouchers...</div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && displayed.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
               <Ticket size={28} className="text-slate-300" />
             </div>
-            <p className="text-sm text-muted-foreground font-medium">Tidak ada voucher</p>
+            <p className="text-sm text-muted-foreground font-medium">
+              {activeTab === 0
+                ? "Tidak ada voucher aktif"
+                : activeTab === 1
+                ? "Tidak ada voucher yang kadaluarsa"
+                : "Tidak ada voucher yang sudah digunakan"}
+            </p>
           </div>
-        ) : (
-          displayed.map((v) => (
+        )}
+
+        {/* Voucher cards */}
+        {!isLoading && displayed.map((v: any) => {
+          const isUsable = activeTab === 0;
+          const colorClass = getVoucherColor(v.type || "Voucher");
+          const expiryDate = formatDate(v.expiryAt);
+          const redeemedDate = formatDate(v.redeemedAt);
+
+          return (
             <div
               key={v.id}
               className="bg-white rounded-xl overflow-hidden border border-border/60 shadow-sm"
@@ -122,16 +149,22 @@ export default function Voucher() {
                 {/* Icon */}
                 <div className={cn(
                   "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm mt-0.5",
-                  v.color
+                  colorClass
                 )}>
-                  <span className="text-white font-black text-base">{v.label}</span>
+                  <span className="text-white font-black text-base">%</span>
                 </div>
 
                 {/* Text */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground leading-tight">{v.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{v.subtitle}</p>
-                  <p className="text-xs text-green-600 font-semibold mt-1">{v.saving}</p>
+                  <p className="text-sm font-bold text-foreground leading-tight">
+                    {v.code || "Voucher"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Ditukar pada {redeemedDate}
+                  </p>
+                  <p className="text-xs text-green-600 font-semibold mt-1">
+                    Status: {v.status}
+                  </p>
                 </div>
 
                 <ChevronRight size={16} className="text-muted-foreground shrink-0 mt-1" />
@@ -148,16 +181,20 @@ export default function Voucher() {
               <div className="flex items-center justify-between px-3.5 pb-3 text-[10px] text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Clock size={11} className="shrink-0" />
-                  <span>{v.expiry}</span>
+                  <span>
+                    {isUsable ? "S.d " : "Kadaluarsa "} {expiryDate}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <ShoppingCart size={11} className="shrink-0" />
-                  <span>{v.minBelanja}</span>
-                </div>
+                {isUsable && (
+                  <div className="flex items-center gap-1">
+                    <ShoppingCart size={11} className="shrink-0" />
+                    <span>Bisa digunakan</span>
+                  </div>
+                )}
               </div>
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
     </div>
   );

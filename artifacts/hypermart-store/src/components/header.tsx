@@ -1,6 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { Search, ChevronDown, Sprout, Coins, Ticket, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useGetUser } from "@/hooks/use-gas-api";
+import { useEffect, useState } from "react";
 
 const tabs = [
   { name: "Toko", path: "/" },
@@ -12,12 +14,33 @@ interface HeaderProps {
   scrolled?: boolean;
 }
 
+// Default user ID for demo (in production, this would come from auth context)
+const DEFAULT_USER_ID = "user-1";
+
 export function Header({ scrolled = false }: HeaderProps) {
   const [location] = useLocation();
+  const [userId, setUserId] = useState(DEFAULT_USER_ID);
+  const { data: user, isLoading } = useGetUser(userId);
+  
   const isDetail = location.startsWith("/product/");
   const isHidden = isDetail || ["/account", "/poin", "/level", "/voucher"].includes(location);
 
   if (isHidden) return null;
+
+  // Format points for display
+  const formattedPoints = user?.points
+    ? user.points.toLocaleString("id-ID")
+    : "0";
+
+  // Get user initials for avatar
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    const parts = name.split(" ");
+    return parts[0][0].toUpperCase();
+  };
+
+  const userInitial = user?.name ? getInitials(user.name) : "U";
+  const userName = user?.name || "User";
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm overflow-hidden">
@@ -45,16 +68,20 @@ export function Header({ scrolled = false }: HeaderProps) {
             data-testid="avatar-user"
             className="w-9 h-9 rounded-full bg-white/25 border-2 border-white/50 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
           >
-            <span className="text-white font-bold text-sm">U</span>
+            <span className="text-white font-bold text-sm">{userInitial}</span>
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1">
-              <span className="text-white font-bold text-sm leading-tight">User A</span>
+              <span className="text-white font-bold text-sm leading-tight">
+                {isLoading ? "Loading..." : userName}
+              </span>
               <ChevronDown size={13} className="text-white/80" />
             </div>
             <div className="flex items-center gap-1 mt-0.5">
               <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full" />
-              <span className="text-white/90 text-[10px] font-semibold">25.000 Point</span>
+              <span className="text-white/90 text-[10px] font-semibold">
+                {isLoading ? "..." : formattedPoints} Point
+              </span>
             </div>
           </div>
         </Link>
