@@ -57,15 +57,7 @@ export default function Checkout() {
 
   return (
     <div className="min-h-full bg-slate-50 pb-32">
-      {/* Header */}
-      <div className="bg-white sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b border-border shadow-sm">
-        <Link href="/">
-          <div className="p-1 -ml-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer">
-            <ChevronLeft size={22} className="text-foreground" />
-          </div>
-        </Link>
-        <span className="text-base font-bold text-foreground">Checkout</span>
-      </div>
+
 
       {/* Delivery Address */}
       <div className="bg-white p-4 mb-2 shadow-sm">

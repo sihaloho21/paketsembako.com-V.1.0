@@ -111,17 +111,7 @@ const menuSections = [
 export default function Account() {
   return (
     <div className="min-h-full bg-slate-50 pb-8">
-      {/* Header */}
-      <div className="bg-white sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b border-border shadow-sm">
-        <button
-          data-testid="button-back-account"
-          onClick={() => window.history.back()}
-          className="p-1 -ml-1 rounded-full hover:bg-slate-100 transition-colors"
-        >
-          <ChevronLeft size={22} className="text-foreground" />
-        </button>
-        <span className="text-base font-bold text-foreground">Akun</span>
-      </div>
+
 
       {/* User profile card */}
       <div className="bg-white px-4 py-5 flex items-center justify-between mb-3">

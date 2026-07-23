@@ -110,10 +110,15 @@ function getProducts(params) {
   if (params.isTrending) filteredProducts.sort((a, b) => b.sold - a.sold);
 
   if (params.sort) {
-    if (params.sort === 'harga-asc') filteredProducts.sort((a, b) => a.price - b.price);
-    else if (params.sort === 'harga-desc') filteredProducts.sort((a, b) => b.price - a.price);
-    else if (params.sort === 'terbaru') filteredProducts.sort((a, b) => b.id - a.id);
-    else if (params.sort === 'teratas') filteredProducts.sort((a, b) => b.rating - a.rating);
+    if (params.sort === 'harga-asc') {
+      filteredProducts.sort((a, b) => (a.price || 0) - (b.price || 0));
+    } else if (params.sort === 'harga-desc') {
+      filteredProducts.sort((a, b) => (b.price || 0) - (a.price || 0));
+    } else if (params.sort === 'terbaru') {
+      filteredProducts.sort((a, b) => (b.id || 0) - (a.id || 0));
+    } else if (params.sort === 'teratas' || params.sort === 'popular') {
+      filteredProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.sold || 0) - (a.sold || 0));
+    }
   }
 
   if (params.limit) filteredProducts = filteredProducts.slice(0, parseInt(params.limit));
