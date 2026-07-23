@@ -62,7 +62,7 @@ export default function ProductDetail() {
     : product.price;
 
   const handleAdd = () => {
-    addToCart(product.id, quantity, selectedVariant);
+    addToCart(product, quantity, selectedVariant);
     toast.success("Ditambahkan ke keranjang", {
       description: `${quantity}x ${product.name}`,
     });

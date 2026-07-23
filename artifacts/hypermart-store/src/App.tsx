@@ -8,6 +8,7 @@ import Account from "./pages/account";
 import Poin from "./pages/poin";
 import Level from "./pages/level";
 import Voucher from "./pages/voucher";
+import Checkout from "./pages/checkout";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -59,6 +60,7 @@ function Router() {
         <Route path="/poin" component={Poin} />
         <Route path="/level" component={Level} />
         <Route path="/voucher" component={Voucher} />
+        <Route path="/checkout" component={Checkout} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

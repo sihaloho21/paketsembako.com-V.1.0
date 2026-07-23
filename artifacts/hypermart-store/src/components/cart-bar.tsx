@@ -14,7 +14,8 @@ export function CartBar() {
   
   return (
     <div className="fixed bottom-[70px] left-0 right-0 z-50 px-4 max-w-[430px] mx-auto pointer-events-none">
-      <div className="bg-[#16A34A] text-white rounded-xl p-3 flex items-center justify-between shadow-lg pointer-events-auto cursor-pointer hover:bg-[#15803D] transition-colors active:scale-[0.98]">
+      <Link href="/checkout">
+        <div className="bg-[#16A34A] text-white rounded-xl p-3 flex items-center justify-between shadow-lg pointer-events-auto cursor-pointer hover:bg-[#15803D] transition-colors active:scale-[0.98]">
         <div className="flex items-center gap-3">
           <div className="relative">
             <ShoppingBag size={20} />
@@ -28,9 +29,10 @@ export function CartBar() {
           </div>
         </div>
         <div className="text-sm font-bold flex items-center gap-1">
-          Lihat Keranjang
+          Checkout
         </div>
       </div>
+      </Link>
     </div>
   );
 }

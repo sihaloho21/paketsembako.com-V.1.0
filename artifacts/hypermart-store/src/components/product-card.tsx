@@ -45,11 +45,11 @@ export function ProductCard({ product, className, horizontal }: ProductCardProps
     }
 
     triggerSuccessAnim();
-    addToCart(product.id, 1);
+    addToCart(product, 1);
   };
 
   const handleSheetConfirm = (variantId: number, quantity: number) => {
-    addToCart(product.id, quantity, variantId);
+    addToCart(product, quantity, variantId);
     setSheetOpen(false);
     triggerSuccessAnim();
   };
