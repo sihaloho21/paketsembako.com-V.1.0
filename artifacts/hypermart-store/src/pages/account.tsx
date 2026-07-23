@@ -15,100 +15,170 @@ import {
   FileText,
   HelpCircle,
 } from "lucide-react";
+import { useGetUser, useGetUserVouchers } from "@/hooks/use-gas-api";
+import { useState } from "react";
 
-const menuSections = [
-  {
-    items: [
-      {
-        icon: <Coins size={20} className="text-yellow-500" />,
-        bg: "bg-yellow-50",
-        label: "Hypermart Poin",
-        sub: "25.000 Poin. Tukar poin di sini",
-        href: "#",
-      },
-      {
-        icon: <Sprout size={20} className="text-green-600" />,
-        bg: "bg-green-50",
-        label: "Level Member - Silver",
-        sub: "Kumpulkan +750 XP lagi untuk naik level!",
-        href: "#",
-      },
-      {
-        icon: <Ticket size={20} className="text-primary" />,
-        bg: "bg-blue-50",
-        label: "Voucher Aktif",
-        sub: "1 Voucher Tersedia",
-        href: "#",
-      },
-    ],
-  },
-  {
-    items: [
-      {
-        icon: <ClipboardList size={20} className="text-muted-foreground" />,
-        bg: "bg-slate-100",
-        label: "Daftar Pesanan",
-        sub: null,
-        href: "#",
-      },
-      {
-        icon: <MapPin size={20} className="text-muted-foreground" />,
-        bg: "bg-slate-100",
-        label: "Alamat Tersimpan",
-        sub: null,
-        href: "#",
-      },
-      {
-        icon: <RefreshCcw size={20} className="text-muted-foreground" />,
-        bg: "bg-slate-100",
-        label: "Metode Pengembalian Dana",
-        sub: null,
-        href: "#",
-      },
-      {
-        icon: <Inbox size={20} className="text-muted-foreground" />,
-        bg: "bg-slate-100",
-        label: "Inbox",
-        sub: null,
-        href: "#",
-      },
-      {
-        icon: <Settings size={20} className="text-muted-foreground" />,
-        bg: "bg-slate-100",
-        label: "Pengaturan Akun",
-        sub: null,
-        href: "#",
-      },
-    ],
-  },
-  {
-    items: [
-      {
-        icon: <Lock size={20} className="text-muted-foreground" />,
-        bg: "bg-slate-100",
-        label: "Kebijakan Privasi",
-        sub: null,
-        href: "#",
-      },
-      {
-        icon: <FileText size={20} className="text-muted-foreground" />,
-        bg: "bg-slate-100",
-        label: "Syarat dan Ketentuan",
-        sub: null,
-        href: "#",
-      },
-      {
-        icon: <HelpCircle size={20} className="text-muted-foreground" />,
-        bg: "bg-slate-100",
-        label: "Bantuan",
-        sub: null,
-        href: "#",
-      },
-    ],
-  },
-];
+// Default user ID for demo (in production, this would come from auth context)
+const DEFAULT_USER_ID = "user-1";
+
+// Level progression thresholds
+const LEVEL_THRESHOLDS = {
+  "Benih": 0,
+  "Bunga": 750,
+  "Buah": 1500,
+  "Panen": 3000,
+};
+
+interface MenuItem {
+  icon: React.ReactNode;
+  bg: string;
+  label: string;
+  sub: string | null;
+  href: string;
+}
+
+interface MenuSection {
+  items: MenuItem[];
+}
 
 export default function Account() {
+  const [userId] = useState(DEFAULT_USER_ID);
+  const { data: user, isLoading: userLoading } = useGetUser(userId);
+  const { data: userVouchers, isLoading: vouchersLoading } = useGetUserVouchers(userId);
+
+  // Calculate XP needed for next level
+  const getXPForNextLevel = () => {
+    if (!user) return 0;
+    const currentLevel = user.level || "Benih";
+    const levelOrder = ["Benih", "Bunga", "Buah", "Panen"];
+    const currentIndex = levelOrder.indexOf(currentLevel);
+    
+    if (currentIndex === -1 || currentIndex === levelOrder.length - 1) {
+      return 0; // Max level reached
+    }
+    
+    const nextLevel = levelOrder[currentIndex + 1];
+    const nextThreshold = LEVEL_THRESHOLDS[nextLevel as keyof typeof LEVEL_THRESHOLDS] || 0;
+    const currentXP = user.xp || 0;
+    
+    return Math.max(0, nextThreshold - currentXP);
+  };
+
+  // Count active vouchers
+  const activeVouchersCount = userVouchers?.filter(
+    (v: any) => v.status === "Active"
+  ).length || 0;
+
+  // Format points
+  const formattedPoints = user?.points
+    ? user.points.toLocaleString("id-ID")
+    : "0";
+
+  // Get user initials
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    const parts = name.split(" ");
+    return parts[0][0].toUpperCase();
+  };
+
+  const userInitial = user?.name ? getInitials(user.name) : "U";
+  const userName = user?.name || "User";
+  const userLevel = user?.level || "Benih";
+
+  const menuSections: MenuSection[] = [
+    {
+      items: [
+        {
+          icon: <Coins size={20} className="text-yellow-500" />,
+          bg: "bg-yellow-50",
+          label: "Hypermart Poin",
+          sub: `${formattedPoints} Poin. Tukar poin di sini`,
+          href: "/poin",
+        },
+        {
+          icon: <Sprout size={20} className="text-green-600" />,
+          bg: "bg-green-50",
+          label: `Level Member - ${userLevel}`,
+          sub: getXPForNextLevel() > 0 
+            ? `Kumpulkan +${getXPForNextLevel()} XP lagi untuk naik level!`
+            : "Level maksimal tercapai!",
+          href: "/level",
+        },
+        {
+          icon: <Ticket size={20} className="text-primary" />,
+          bg: "bg-blue-50",
+          label: "Voucher Aktif",
+          sub: `${activeVouchersCount} Voucher Tersedia`,
+          href: "/voucher",
+        },
+      ],
+    },
+    {
+      items: [
+        {
+          icon: <ClipboardList size={20} className="text-muted-foreground" />,
+          bg: "bg-slate-100",
+          label: "Daftar Pesanan",
+          sub: null,
+          href: "#",
+        },
+        {
+          icon: <MapPin size={20} className="text-muted-foreground" />,
+          bg: "bg-slate-100",
+          label: "Alamat Tersimpan",
+          sub: null,
+          href: "#",
+        },
+        {
+          icon: <RefreshCcw size={20} className="text-muted-foreground" />,
+          bg: "bg-slate-100",
+          label: "Metode Pengembalian Dana",
+          sub: null,
+          href: "#",
+        },
+        {
+          icon: <Inbox size={20} className="text-muted-foreground" />,
+          bg: "bg-slate-100",
+          label: "Inbox",
+          sub: null,
+          href: "#",
+        },
+        {
+          icon: <Settings size={20} className="text-muted-foreground" />,
+          bg: "bg-slate-100",
+          label: "Pengaturan Akun",
+          sub: null,
+          href: "#",
+        },
+      ],
+    },
+    {
+      items: [
+        {
+          icon: <Lock size={20} className="text-muted-foreground" />,
+          bg: "bg-slate-100",
+          label: "Kebijakan Privasi",
+          sub: null,
+          href: "#",
+        },
+        {
+          icon: <FileText size={20} className="text-muted-foreground" />,
+          bg: "bg-slate-100",
+          label: "Syarat dan Ketentuan",
+          sub: null,
+          href: "#",
+        },
+        {
+          icon: <HelpCircle size={20} className="text-muted-foreground" />,
+          bg: "bg-slate-100",
+          label: "Bantuan",
+          sub: null,
+          href: "#",
+        },
+      ],
+    },
+  ];
+
   return (
     <div className="min-h-full bg-slate-50 pb-8">
       {/* Header */}
@@ -126,7 +196,9 @@ export default function Account() {
       {/* User profile card */}
       <div className="bg-white px-4 py-5 flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-base font-bold text-foreground leading-tight">User A</h2>
+          <h2 className="text-base font-bold text-foreground leading-tight">
+            {userLoading ? "Loading..." : userName}
+          </h2>
           <button
             data-testid="button-ubah-akun"
             className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 hover:text-primary transition-colors"
@@ -136,7 +208,7 @@ export default function Account() {
         </div>
         {/* Avatar circle */}
         <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center border-2 border-green-200">
-          <span className="text-green-700 font-bold text-lg">U</span>
+          <span className="text-green-700 font-bold text-lg">{userInitial}</span>
         </div>
       </div>
 

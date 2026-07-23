@@ -125,3 +125,116 @@ export async function getCategories() {
     action: "getCategories",
   });
 }
+
+/**
+ * Fetch profil user berdasarkan ID
+ */
+export async function getUser(id: string) {
+  return callGAS({
+    action: "getUser",
+    id,
+  });
+}
+
+/**
+ * Fetch semua voucher yang tersedia untuk ditukar
+ */
+export async function getAvailableVouchers() {
+  return callGAS({
+    action: "getAvailableVouchers",
+  });
+}
+
+/**
+ * Fetch voucher yang sudah ditukar oleh user
+ */
+export async function getUserVouchers(userId: string) {
+  return callGAS({
+    action: "getUserVouchers",
+    userId,
+  });
+}
+
+/**
+ * Fetch riwayat poin user
+ */
+export async function getPointsHistory(userId: string) {
+  return callGAS({
+    action: "getPointsHistory",
+    userId,
+  });
+}
+
+/**
+ * Tukar poin user dengan voucher
+ */
+export async function redeemVoucher(userId: string, voucherId: number) {
+  const config = getConfig();
+  if (!config) {
+    throw new Error("Config not loaded. Call setupApiClient() first.");
+  }
+
+  const url = `${config.apiBaseUrl}?action=redeemVoucher`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      mode: "cors",
+      cache: "no-cache",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        voucherId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`GAS API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error redeeming voucher:", error);
+    throw error;
+  }
+}
+
+/**
+ * Update XP user
+ */
+export async function updateUserXP(userId: string, xpToAdd: number) {
+  const config = getConfig();
+  if (!config) {
+    throw new Error("Config not loaded. Call setupApiClient() first.");
+  }
+
+  const url = `${config.apiBaseUrl}?action=updateUserXP`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      mode: "cors",
+      cache: "no-cache",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        xpToAdd,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`GAS API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating user XP:", error);
+    throw error;
+  }
+}

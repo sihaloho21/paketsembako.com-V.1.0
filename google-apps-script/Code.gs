@@ -20,6 +20,46 @@ function doGet(e) {
       case 'getCategories':
         result = getCategories();
         break;
+      case 'getUser':
+        result = getUser(e.parameter.id);
+        break;
+      case 'getAvailableVouchers':
+        result = getAvailableVouchers();
+        break;
+      case 'getUserVouchers':
+        result = getUserVouchers(e.parameter.userId);
+        break;
+      case 'getPointsHistory':
+        result = getPointsHistory(e.parameter.userId);
+        break;
+      default:
+        return createErrorResponse('Invalid action: ' + action, 400);
+    }
+    return createJsonResponse(result);
+  } catch (error) {
+    return createErrorResponse(error.message, 500);
+  }
+}
+
+/**
+ * Fungsi utama untuk menangani request POST.
+ * @param {Object} e - Objek event dari request POST.
+ * @returns {GoogleAppsScript.Content.TextOutput} Output JSON.
+ */
+function doPost(e) {
+  const action = e.parameter.action;
+  let result;
+
+  try {
+    switch (action) {
+      case 'redeemVoucher':
+        const payload = JSON.parse(e.postData.contents);
+        result = redeemVoucher(payload.userId, payload.voucherId);
+        break;
+      case 'updateUserXP':
+        const xpPayload = JSON.parse(e.postData.contents);
+        result = updateUserXP(xpPayload.userId, xpPayload.xpToAdd);
+        break;
       default:
         return createErrorResponse('Invalid action: ' + action, 400);
     }
@@ -208,6 +248,253 @@ function getCategories() {
   return categories;
 }
 
+/**
+ * Mengambil profil user berdasarkan ID dari sheet 'Users'.
+ * @param {string} id - ID user.
+ * @returns {Object} Objek user.
+ */
+function getUser(id) {
+  const userHeaders = ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl'];
+  const sheet = getOrCreateSheet('Users', userHeaders);
+  const data = sheet.getDataRange().getValues();
+  const headers = data.shift();
+  
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    if (String(row[0]) === String(id)) {
+      const user = {};
+      for (let j = 0; j < headers.length; j++) {
+        let value = row[j];
+        if (headers[j] === 'points' || headers[j] === 'xp') {
+          value = parseInt(value) || 0;
+        }
+        user[headers[j]] = value;
+      }
+      return user;
+    }
+  }
+  
+  throw new Error('User not found with ID: ' + id);
+}
+
+/**
+ * Mengambil semua voucher yang tersedia dari sheet 'Vouchers'.
+ * @returns {Array<Object>} Array objek voucher.
+ */
+function getAvailableVouchers() {
+  const voucherHeaders = ['id', 'type', 'title', 'points', 'value', 'expiryDays', 'color', 'description'];
+  const sheet = getOrCreateSheet('Vouchers', voucherHeaders);
+  const data = sheet.getDataRange().getValues();
+  const headers = data.shift();
+  const vouchers = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const voucher = {};
+    for (let j = 0; j < headers.length; j++) {
+      let value = row[j];
+      if (headers[j] === 'id' || headers[j] === 'points' || headers[j] === 'expiryDays') {
+        value = parseInt(value);
+      }
+      voucher[headers[j]] = value;
+    }
+    vouchers.push(voucher);
+  }
+  
+  return vouchers;
+}
+
+/**
+ * Mengambil voucher yang sudah ditukar oleh user dari sheet 'UserVouchers'.
+ * @param {string} userId - ID user.
+ * @returns {Array<Object>} Array objek user voucher.
+ */
+function getUserVouchers(userId) {
+  const userVoucherHeaders = ['id', 'userId', 'voucherId', 'code', 'redeemedAt', 'expiryAt', 'status'];
+  const sheet = getOrCreateSheet('UserVouchers', userVoucherHeaders);
+  const data = sheet.getDataRange().getValues();
+  const headers = data.shift();
+  const userVouchers = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    if (String(row[1]) === String(userId)) {
+      const uv = {};
+      for (let j = 0; j < headers.length; j++) {
+        let value = row[j];
+        if (headers[j] === 'voucherId') {
+          value = parseInt(value);
+        }
+        uv[headers[j]] = value;
+      }
+      userVouchers.push(uv);
+    }
+  }
+  
+  return userVouchers;
+}
+
+/**
+ * Mengambil riwayat poin user dari sheet 'PointsHistory'.
+ * @param {string} userId - ID user.
+ * @returns {Array<Object>} Array objek points history.
+ */
+function getPointsHistory(userId) {
+  const historyHeaders = ['id', 'userId', 'type', 'amount', 'description', 'createdAt'];
+  const sheet = getOrCreateSheet('PointsHistory', historyHeaders);
+  const data = sheet.getDataRange().getValues();
+  const headers = data.shift();
+  const history = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    if (String(row[1]) === String(userId)) {
+      const h = {};
+      for (let j = 0; j < headers.length; j++) {
+        let value = row[j];
+        if (headers[j] === 'amount') {
+          value = parseInt(value);
+        }
+        h[headers[j]] = value;
+      }
+      history.push(h);
+    }
+  }
+  
+  return history;
+}
+
+/**
+ * Menukar poin user dengan voucher.
+ * @param {string} userId - ID user.
+ * @param {number} voucherId - ID voucher.
+ * @returns {Object} Hasil penukaran.
+ */
+function redeemVoucher(userId, voucherId) {
+  // Get user
+  const user = getUser(userId);
+  
+  // Get voucher
+  const vouchers = getAvailableVouchers();
+  const voucher = vouchers.find(v => v.id === parseInt(voucherId));
+  
+  if (!voucher) {
+    throw new Error('Voucher not found with ID: ' + voucherId);
+  }
+  
+  if (user.points < voucher.points) {
+    throw new Error('Insufficient points. Required: ' + voucher.points + ', Available: ' + user.points);
+  }
+  
+  // Deduct points from user
+  const newPoints = user.points - voucher.points;
+  const userSheet = getOrCreateSheet('Users', ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl']);
+  const userData = userSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < userData.length; i++) {
+    if (String(userData[i][0]) === String(userId)) {
+      userSheet.getRange(i + 1, 4).setValue(newPoints); // Update points column
+      break;
+    }
+  }
+  
+  // Create user voucher record
+  const userVoucherSheet = getOrCreateSheet('UserVouchers', ['id', 'userId', 'voucherId', 'code', 'redeemedAt', 'expiryAt', 'status']);
+  const now = new Date();
+  const expiryDate = new Date(now.getTime() + voucher.expiryDays * 24 * 60 * 60 * 1000);
+  const voucherCode = 'VCH-' + generateRandomCode(8);
+  const uvId = 'uv-' + Math.random().toString(36).substr(2, 9);
+  
+  userVoucherSheet.appendRow([
+    uvId,
+    userId,
+    voucherId,
+    voucherCode,
+    now.toISOString(),
+    expiryDate.toISOString(),
+    'Active'
+  ]);
+  
+  // Record points history
+  const historySheet = getOrCreateSheet('PointsHistory', ['id', 'userId', 'type', 'amount', 'description', 'createdAt']);
+  const phId = 'ph-' + Math.random().toString(36).substr(2, 9);
+  historySheet.appendRow([
+    phId,
+    userId,
+    'Redeem',
+    -voucher.points,
+    'Tukar Voucher: ' + voucher.title,
+    now.toISOString()
+  ]);
+  
+  return {
+    success: true,
+    message: 'Voucher redeemed successfully',
+    voucherCode: voucherCode,
+    newPoints: newPoints,
+    userVoucherId: uvId
+  };
+}
+
+/**
+ * Update XP user dan cek level progression.
+ * @param {string} userId - ID user.
+ * @param {number} xpToAdd - Jumlah XP yang ditambahkan.
+ * @returns {Object} Hasil update.
+ */
+function updateUserXP(userId, xpToAdd) {
+  const user = getUser(userId);
+  const newXP = user.xp + xpToAdd;
+  
+  // Level progression logic
+  const levelThresholds = {
+    'Benih': 0,
+    'Bunga': 750,
+    'Buah': 1500,
+    'Panen': 3000
+  };
+  
+  let newLevel = user.level;
+  for (const [levelName, threshold] of Object.entries(levelThresholds)) {
+    if (newXP >= threshold) {
+      newLevel = levelName;
+    }
+  }
+  
+  // Update user sheet
+  const userSheet = getOrCreateSheet('Users', ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl']);
+  const userData = userSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < userData.length; i++) {
+    if (String(userData[i][0]) === String(userId)) {
+      userSheet.getRange(i + 1, 5).setValue(newXP); // Update XP column
+      userSheet.getRange(i + 1, 6).setValue(newLevel); // Update level column
+      break;
+    }
+  }
+  
+  return {
+    success: true,
+    newXP: newXP,
+    newLevel: newLevel,
+    levelChanged: newLevel !== user.level
+  };
+}
+
+/**
+ * Generate random code untuk voucher.
+ * @param {number} length - Panjang code.
+ * @returns {string} Random code.
+ */
+function generateRandomCode(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 // Fungsi ini akan dijalankan saat Web App di-deploy atau dibuka pertama kali
 function setupInitialSheets() {
   const productHeaders = [
@@ -219,6 +506,18 @@ function setupInitialSheets() {
 
   const categoryHeaders = ['id', 'name', 'productCount', 'imageUrl'];
   getOrCreateSheet('Categories', categoryHeaders);
+  
+  const userHeaders = ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl'];
+  getOrCreateSheet('Users', userHeaders);
+  
+  const voucherHeaders = ['id', 'type', 'title', 'points', 'value', 'expiryDays', 'color', 'description'];
+  getOrCreateSheet('Vouchers', voucherHeaders);
+  
+  const userVoucherHeaders = ['id', 'userId', 'voucherId', 'code', 'redeemedAt', 'expiryAt', 'status'];
+  getOrCreateSheet('UserVouchers', userVoucherHeaders);
+  
+  const historyHeaders = ['id', 'userId', 'type', 'amount', 'description', 'createdAt'];
+  getOrCreateSheet('PointsHistory', historyHeaders);
 }
 
 // Panggil setupInitialSheets() saat script di-deploy atau di-update
