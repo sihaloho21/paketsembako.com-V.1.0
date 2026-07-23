@@ -15,11 +15,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { setupApiClient } from "@/lib/config";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { useAutoRegister } from "@/hooks/use-auto-register";
 
 const queryClient = new QueryClient();
 
 function AppContent() {
   const [isConfigReady, setIsConfigReady] = useState(false);
+  useAutoRegister();
 
   useEffect(() => {
     // Setup API client dengan config dari public/config.json
@@ -72,7 +75,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AppContent />
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

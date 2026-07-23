@@ -32,11 +32,15 @@ function doGet(e) {
       case 'getPointsHistory':
         result = getPointsHistory(e.parameter.userId);
         break;
+      case 'initializeUser':
+        result = initializeUser(e.parameter.id, e.parameter.name, e.parameter.email);
+        break;
       default:
         return createErrorResponse('Invalid action: ' + action, 400);
     }
     return createJsonResponse(result);
   } catch (error) {
+    logError(action, error);
     return createErrorResponse(error.message, 500);
   }
 }
@@ -254,6 +258,10 @@ function getCategories() {
  * @returns {Object} Objek user.
  */
 function getUser(id) {
+  if (!id) {
+    throw new Error('User ID is required');
+  }
+  
   const userHeaders = ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl'];
   const sheet = getOrCreateSheet('Users', userHeaders);
   const data = sheet.getDataRange().getValues();
@@ -275,6 +283,57 @@ function getUser(id) {
   }
   
   throw new Error('User not found with ID: ' + id);
+}
+
+/**
+ * Inisialisasi user baru atau cek apakah user sudah terdaftar.
+ * @param {string} id - ID user.
+ * @param {string} name - Nama user.
+ * @param {string} email - Email user.
+ * @returns {Object} Hasil inisialisasi.
+ */
+function initializeUser(id, name, email) {
+  if (!id) {
+    throw new Error('User ID is required');
+  }
+  
+  const userHeaders = ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl'];
+  const sheet = getOrCreateSheet('Users', userHeaders);
+  const data = sheet.getDataRange().getValues();
+  
+  // Cek apakah user sudah ada
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(id)) {
+      // User sudah ada, return data yang ada
+      return {
+        success: true,
+        isNew: false,
+        message: 'User already exists',
+        userId: id
+      };
+    }
+  }
+  
+  // User baru, tambahkan ke sheet
+  const now = new Date();
+  sheet.appendRow([
+    id,
+    name || 'User',
+    email || '',
+    0,      // points
+    0,      // xp
+    'Benih', // level
+    ''      // avatarUrl
+  ]);
+  
+  logAction('USER_REGISTERED', id, 'New user registered: ' + (name || id));
+  
+  return {
+    success: true,
+    isNew: true,
+    message: 'User registered successfully',
+    userId: id
+  };
 }
 
 /**
@@ -518,6 +577,28 @@ function setupInitialSheets() {
   
   const historyHeaders = ['id', 'userId', 'type', 'amount', 'description', 'createdAt'];
   getOrCreateSheet('PointsHistory', historyHeaders);
+}
+
+/**
+ * Log aktivitas ke sheet 'Logs'.
+ * @param {string} action - Nama action.
+ * @param {string} userId - ID user (opsional).
+ * @param {string} message - Pesan log.
+ */
+function logAction(action, userId, message) {
+  const logHeaders = ['timestamp', 'action', 'userId', 'message'];
+  const sheet = getOrCreateSheet('Logs', logHeaders);
+  const now = new Date().toISOString();
+  sheet.appendRow([now, action, userId || '', message]);
+}
+
+/**
+ * Log error ke sheet 'Logs'.
+ * @param {string} action - Nama action yang error.
+ * @param {Object} error - Error object.
+ */
+function logError(action, error) {
+  logAction('ERROR', '', action + ': ' + error.message);
 }
 
 // Panggil setupInitialSheets() saat script di-deploy atau di-update

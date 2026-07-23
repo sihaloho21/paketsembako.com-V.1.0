@@ -238,3 +238,15 @@ export async function updateUserXP(userId: string, xpToAdd: number) {
     throw error;
   }
 }
+
+/**
+ * Inisialisasi user baru atau cek apakah user sudah terdaftar
+ */
+export async function initializeUser(userId: string, name?: string, email?: string) {
+  return callGAS({
+    action: "initializeUser",
+    id: userId,
+    name,
+    email,
+  });
+}
