@@ -2,7 +2,7 @@ import {
   useGetFeaturedProducts,
   useGetPromoProducts,
   useGetTrendingProducts,
-} from "@workspace/api-client-react";
+} from "@/hooks/use-gas-api";
 import { ProductCard } from "@/components/product-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, Flame, Zap, Tag } from "lucide-react";
@@ -102,7 +102,7 @@ export default function Home() {
               ? Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
                 ))
-              : promos?.map((product) => (
+              : promos?.map((product: any) => (
                   <ProductCard key={product.id} product={product} horizontal />
                 ))}
           </div>
@@ -128,7 +128,7 @@ export default function Home() {
               ? Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
                 ))
-              : trending?.map((product) => (
+              : trending?.map((product: any) => (
                   <ProductCard key={product.id} product={product} horizontal />
                 ))}
           </div>
@@ -154,7 +154,7 @@ export default function Home() {
               ? Array.from({ length: 6 }).map((_, i) => (
                   <Skeleton key={i} className="h-[240px] rounded-xl" />
                 ))
-              : featured?.slice(0, 6).map((product) => (
+              : featured?.slice(0, 6).map((product: any) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
           </div>
@@ -175,7 +175,7 @@ export default function Home() {
               ? Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
                 ))
-              : featured?.map((product) => (
+              : featured?.map((product: any) => (
                   <ProductCard key={product.id} product={product} horizontal />
                 ))}
           </div>
@@ -195,7 +195,7 @@ export default function Home() {
             ? Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-[240px] rounded-xl" />
               ))
-            : trending?.slice(0, 8).map((product) => (
+            : trending?.slice(0, 8).map((product: any) => (
                 <ProductCard key={product.id} product={product} />
               ))}
         </div>

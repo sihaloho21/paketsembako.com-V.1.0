@@ -91,11 +91,8 @@ export function getConfig(): AppConfig | null {
 }
 
 /**
- * Setup base URL untuk API client (React Query)
+ * Setup base URL untuk API client
  */
 export async function setupApiClient(): Promise<void> {
-  const config = await loadConfig();
-  // Import setBaseUrl dari custom-fetch
-  const { setBaseUrl } = await import("@workspace/api-client-react");
-  setBaseUrl(config.apiBaseUrl);
+  await loadConfig();
 }

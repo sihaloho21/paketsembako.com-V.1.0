@@ -1,8 +1,7 @@
-import { useListCategories } from "@workspace/api-client-react";
+import { useListCategories } from "@/hooks/use-gas-api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
 import { Link } from "wouter";
-import categoryImg from "@assets/tampilan_menu_kategori_1781949704211.png";
 
 export default function Categories() {
   const { data: categories, isLoading } = useListCategories();
@@ -26,7 +25,7 @@ export default function Categories() {
               </div>
             ))
           ) : (
-            categories?.map((category) => (
+            categories?.map((category: any) => (
               <Link key={category.id} href={`/products`}>
                 <div className="flex items-center gap-4 p-4 border-b border-border last:border-0 hover:bg-slate-50 transition-colors cursor-pointer">
                   <div className="bg-slate-100 rounded-lg w-12 h-12 flex items-center justify-center shrink-0 border border-slate-200">

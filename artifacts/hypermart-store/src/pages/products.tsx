@@ -1,4 +1,4 @@
-import { useListProducts } from "@workspace/api-client-react";
+import { useListProducts } from "@/hooks/use-gas-api";
 import { ProductCard } from "@/components/product-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
@@ -12,7 +12,7 @@ export default function Products() {
   const [activeTab, setActiveTab] = useState<MainTab>("popular");
   const [priceDir, setPriceDir] = useState<PriceDir>("harga-asc");
 
-  const sortParam = activeTab === "harga" ? "harga" : activeTab;
+  const sortParam = activeTab === "harga" ? priceDir : activeTab;
 
   const { data: products, isLoading } = useListProducts({ sort: sortParam });
 
@@ -99,7 +99,7 @@ export default function Products() {
             ? Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} className="h-[240px] rounded-xl" />
               ))
-            : products?.map((product) => (
+            : products?.map((product: any) => (
                 <ProductCard key={product.id} product={product} />
               ))}
         </div>

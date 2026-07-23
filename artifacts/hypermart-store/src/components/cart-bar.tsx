@@ -1,10 +1,10 @@
-import { useGetCart } from "@workspace/api-client-react";
+import { useCart } from "@/hooks/use-cart";
 import { ShoppingBag } from "lucide-react";
 import { formatPrice } from "@/lib/format";
 import { useLocation } from "wouter";
 
 export function CartBar() {
-  const { data: cart } = useGetCart();
+  const { cart } = useCart();
   const [location] = useLocation();
   
   if (!cart || cart.totalItems === 0) return null;
