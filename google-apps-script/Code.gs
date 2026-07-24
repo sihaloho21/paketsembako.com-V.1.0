@@ -156,33 +156,51 @@ function getProducts(params) {
       const row = data[i];
       
       const idVal = getVal(row, 'id');
-      const namaVal = getVal(row, 'nama');
+      const nameVal = getVal(row, 'name') || getVal(row, 'nama');
       
       // Skip empty rows
-      if (!idVal && !namaVal) {
+      if (!idVal && !nameVal) {
         continue;
       }
 
+      // Helper for parsing Indonesian numbers (e.g., "4,5" -> 4.5)
+      const parseNum = (val) => {
+        if (typeof val === 'string') {
+          return parseFloat(val.replace(',', '.'));
+        }
+        return parseFloat(val);
+      };
+
       const product = {
         id: parseInt(idVal) || i,
-        name: String(namaVal || ''),
-        price: parseInt(getVal(row, 'harga')) || 0,
-        originalPrice: parseInt(getVal(row, 'harga_coret')) || 0,
-        discountPercent: 0,
-        imageUrl: String(getVal(row, 'gambar') || 'https://via.placeholder.com/200'),
+        name: String(nameVal || ''),
+        price: parseInt(getVal(row, 'price')) || parseInt(getVal(row, 'harga')) || 0,
+        originalPrice: parseInt(getVal(row, 'originalPrice')) || parseInt(getVal(row, 'harga_coret')) || 0,
+        discountPercent: parseInt(getVal(row, 'discountPercent')) || 0,
+        imageUrl: String(getVal(row, 'imageUrl') || getVal(row, 'gambar') || 'https://via.placeholder.com/200'),
         images: [],
-        categoryId: 1,
-        categoryName: 'Paket Sembako',
-        rating: 4.5,
-        reviewCount: 0,
-        sold: parseInt(getVal(row, 'stok')) || 0,
-        badge: 'Terlaris',
-        isPromo: false,
-        description: String(namaVal || ''),
-        shelfLife: '6 Bulan',
-        deliveryInfo: '1-2 Jam Tiba',
+        categoryId: parseInt(getVal(row, 'categoryId')) || 1,
+        categoryName: String(getVal(row, 'categoryName') || 'Umum'),
+        rating: parseNum(getVal(row, 'rating')) || 4.5,
+        reviewCount: parseInt(getVal(row, 'reviewCount')) || 0,
+        sold: parseInt(getVal(row, 'sold')) || parseInt(getVal(row, 'stok')) || 0,
+        badge: String(getVal(row, 'badge') || 'Terlaris'),
+        isPromo: String(getVal(row, 'isPromo')).toUpperCase() === 'TRUE',
+        description: String(getVal(row, 'description') || nameVal || ''),
+        shelfLife: String(getVal(row, 'shelfLife') || '6 Bulan'),
+        deliveryInfo: String(getVal(row, 'deliveryInfo') || '1-2 Jam Tiba'),
         variants: []
       };
+
+      // Parse JSON fields if available
+      const imagesRaw = getVal(row, 'images');
+      if (imagesRaw) {
+        try { product.images = JSON.parse(imagesRaw); } catch (e) { product.images = []; }
+      }
+      const variantsRaw = getVal(row, 'variants');
+      if (variantsRaw) {
+        try { product.variants = JSON.parse(variantsRaw); } catch (e) { product.variants = []; }
+      }
 
     // Fallback for originalPrice if it's 0 or missing
     if (product.originalPrice === 0) {
