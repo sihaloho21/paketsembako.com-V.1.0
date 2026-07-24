@@ -15,17 +15,6 @@ import {
   FileText,
   HelpCircle,
 } from "lucide-react";
-import { useGetUser, useGetUserVouchers } from "@/hooks/use-gas-api";
-import { useUserId } from "@/hooks/use-user-id";
-import { TextSkeleton } from "@/components/skeletons";
-
-// Level progression thresholds
-const LEVEL_THRESHOLDS = {
-  "Benih": 0,
-  "Bunga": 750,
-  "Buah": 1500,
-  "Panen": 3000,
-};
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -40,49 +29,18 @@ interface MenuSection {
 }
 
 export default function Account() {
-  const { userId, isLoaded } = useUserId();
-  const { data: user, isLoading: userLoading } = useGetUser(userId);
-  const { data: userVouchers, isLoading: vouchersLoading } = useGetUserVouchers(userId);
-
-  // Calculate XP needed for next level
-  const getXPForNextLevel = () => {
-    if (!user) return 0;
-    const currentLevel = user.level || "Benih";
-    const levelOrder = ["Benih", "Bunga", "Buah", "Panen"];
-    const currentIndex = levelOrder.indexOf(currentLevel);
-    
-    if (currentIndex === -1 || currentIndex === levelOrder.length - 1) {
-      return 0; // Max level reached
-    }
-    
-    const nextLevel = levelOrder[currentIndex + 1];
-    const nextThreshold = LEVEL_THRESHOLDS[nextLevel as keyof typeof LEVEL_THRESHOLDS] || 0;
-    const currentXP = user.xp || 0;
-    
-    return Math.max(0, nextThreshold - currentXP);
+  // Static placeholder data for UI development
+  const user = {
+    name: "User",
+    points: 0,
+    level: "Benih",
+    xp: 0
   };
-
-  // Count active vouchers
-  const activeVouchersCount = userVouchers?.filter(
-    (v: any) => v.status === "Active"
-  ).length || 0;
+  
+  const activeVouchersCount = 0;
 
   // Format points
-  const formattedPoints = user?.points
-    ? user.points.toLocaleString("id-ID")
-    : "0";
-
-  // Get user initials
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    const parts = name.split(" ");
-    return parts[0][0].toUpperCase();
-  };
-
-  const userInitial = user?.name ? getInitials(user.name) : "U";
-  const userName = user?.name || "User";
-  const userLevel = user?.level || "Benih";
-  const isLoadingUser = userLoading || !isLoaded;
+  const formattedPoints = user.points.toLocaleString("id-ID");
 
   const menuSections: MenuSection[] = [
     {
@@ -97,10 +55,8 @@ export default function Account() {
         {
           icon: <Sprout size={20} className="text-green-600" />,
           bg: "bg-green-50",
-          label: `Level Member - ${userLevel}`,
-          sub: getXPForNextLevel() > 0 
-            ? `Kumpulkan +${getXPForNextLevel()} XP lagi untuk naik level!`
-            : "Level maksimal tercapai!",
+          label: `Level Member - ${user.level}`,
+          sub: "Kumpulkan XP untuk naik level!",
           href: "/level",
         },
         {
@@ -183,7 +139,6 @@ export default function Account() {
       {/* Header */}
       <div className="bg-white sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b border-border shadow-sm">
         <button
-          data-testid="button-back-account"
           onClick={() => window.history.back()}
           className="p-1 -ml-1 rounded-full hover:bg-slate-100 transition-colors"
         >
@@ -195,25 +150,18 @@ export default function Account() {
       {/* User profile card */}
       <div className="bg-white px-4 py-5 flex items-center justify-between mb-3">
         <div>
-          {isLoadingUser ? (
-            <TextSkeleton lines={2} />
-          ) : (
-            <>
-              <h2 className="text-base font-bold text-foreground leading-tight">
-                {userName}
-              </h2>
-              <button
-                data-testid="button-ubah-akun"
-                className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 hover:text-primary transition-colors"
-              >
-                Ubah Akun <Pencil size={11} />
-              </button>
-            </>
-          )}
+          <h2 className="text-base font-bold text-foreground leading-tight">
+            {user.name}
+          </h2>
+          <button
+            className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 hover:text-primary transition-colors"
+          >
+            Ubah Akun <Pencil size={11} />
+          </button>
         </div>
         {/* Avatar circle */}
         <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center border-2 border-green-200">
-          <span className="text-green-700 font-bold text-lg">{userInitial}</span>
+          <span className="text-green-700 font-bold text-lg">U</span>
         </div>
       </div>
 
@@ -223,7 +171,6 @@ export default function Account() {
           {section.items.map((item, ii) => (
             <Link key={ii} href={item.href}>
               <div
-                data-testid={`menu-item-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                 className={`flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 transition-colors ${
                   ii < section.items.length - 1 ? "border-b border-border/60" : ""
                 }`}

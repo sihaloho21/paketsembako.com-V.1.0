@@ -1,42 +1,23 @@
-import { useGetProduct } from "@/hooks/use-gas-api";
 import { useRoute, Link } from "wouter";
 import { ChevronLeft, Share2, ShoppingBag, Minus, Plus, Heart } from "lucide-react";
 import { formatPrice } from "@/lib/format";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { ProductCard } from "@/components/product-card";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/hooks/use-cart";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/product/:id");
-  const productId = Number(params?.id);
-  const { data: product, isLoading } = useGetProduct(productId);
+  const _productId = Number(params?.id);
+  
+  // Static placeholder data for UI development
+  const product: any = null;
   
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
   
   const { addToCart } = useCart();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-full bg-slate-50 pb-20">
-        <div className="h-[350px] w-full bg-white relative">
-          <div className="absolute top-4 left-4 z-10 bg-white/80 p-2 rounded-full">
-            <ChevronLeft size={24} />
-          </div>
-          <Skeleton className="w-full h-full" />
-        </div>
-        <div className="p-4 bg-white mt-2">
-          <Skeleton className="h-8 w-3/4 mb-2" />
-          <Skeleton className="h-6 w-1/4 mb-4" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-      </div>
-    );
-  }
 
   if (!product) {
     return (
@@ -149,12 +130,6 @@ export default function ProductDetail() {
               );
             })}
           </div>
-          <button className="mt-2 text-xs text-primary font-medium flex items-center gap-0.5">
-            Pilihan Lainnya
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
         </div>
       )}
 
@@ -210,26 +185,7 @@ export default function ProductDetail() {
         <div className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
           {product.description}
         </div>
-        <button className="text-sm font-medium text-primary mt-2 flex items-center">
-          Baca Selengkapnya <ChevronLeft size={14} className="rotate-270 ml-1" />
-        </button>
       </div>
-
-      {/* Related Products */}
-      {product.relatedProducts && product.relatedProducts.length > 0 && (
-        <div className="bg-white py-4 shadow-sm border-t border-border">
-          <div className="px-4 mb-3">
-            <h3 className="font-bold text-base">Yang lain beli ini juga!</h3>
-          </div>
-          <div className="overflow-x-auto pb-4 px-4 hide-scrollbar">
-            <div className="flex gap-3 w-max">
-              {product.relatedProducts.map((p: any) => (
-                <ProductCard key={p.id} product={p} horizontal />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Bottom Sticky Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border px-4 py-3 flex items-center gap-3 max-w-[430px] mx-auto pb-safe">

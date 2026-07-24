@@ -1,82 +1,44 @@
-import { useQuery } from "@tanstack/react-query";
-import * as gasApi from "@/lib/gas-api";
+/**
+ * Hook for API calls
+ * Backend functionality has been removed.
+ */
 
 export function useGetFeaturedProducts() {
-  return useQuery({
-    queryKey: ["products", "featured"],
-    queryFn: () => gasApi.getFeaturedProducts(),
-  });
+  return { data: [], isLoading: false };
 }
 
 export function useGetPromoProducts() {
-  return useQuery({
-    queryKey: ["products", "promo"],
-    queryFn: () => gasApi.getPromoProducts(),
-  });
+  return { data: [], isLoading: false };
 }
 
 export function useGetTrendingProducts() {
-  return useQuery({
-    queryKey: ["products", "trending"],
-    queryFn: () => gasApi.getTrendingProducts(),
-  });
+  return { data: [], isLoading: false };
 }
 
-export function useListProducts(filters?: {
-  categoryId?: number;
-  sort?: string;
-  isPromo?: boolean;
-  isTrending?: boolean;
-  limit?: number;
-}) {
-  return useQuery({
-    queryKey: ["products", filters],
-    queryFn: () => gasApi.getProducts(filters),
-  });
+export function useListProducts(_filters?: any) {
+  return { data: [], isLoading: false };
 }
 
-export function useGetProduct(id: number) {
-  return useQuery({
-    queryKey: ["product", id],
-    queryFn: () => gasApi.getProduct(id),
-    enabled: !!id,
-  });
+export function useGetProduct(_id: number) {
+  return { data: null, isLoading: false };
 }
 
 export function useListCategories() {
-  return useQuery({
-    queryKey: ["categories"],
-    queryFn: () => gasApi.getCategories(),
-  });
+  return { data: [], isLoading: false };
 }
 
-export function useGetUser(id: string) {
-  return useQuery({
-    queryKey: ["user", id],
-    queryFn: () => gasApi.getUser(id),
-    enabled: !!id,
-  });
+export function useGetUser(_id: string) {
+  return { data: null, isLoading: false };
 }
 
 export function useGetAvailableVouchers() {
-  return useQuery({
-    queryKey: ["vouchers", "available"],
-    queryFn: () => gasApi.getAvailableVouchers(),
-  });
+  return { data: [], isLoading: false };
 }
 
-export function useGetUserVouchers(userId: string) {
-  return useQuery({
-    queryKey: ["userVouchers", userId],
-    queryFn: () => gasApi.getUserVouchers(userId),
-    enabled: !!userId,
-  });
+export function useGetUserVouchers(_userId: string) {
+  return { data: [], isLoading: false };
 }
 
-export function useGetPointsHistory(userId: string) {
-  return useQuery({
-    queryKey: ["pointsHistory", userId],
-    queryFn: () => gasApi.getPointsHistory(userId),
-    enabled: !!userId,
-  });
+export function useGetPointsHistory(_userId: string) {
+  return { data: [], isLoading: false };
 }

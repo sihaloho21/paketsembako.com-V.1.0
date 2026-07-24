@@ -1,10 +1,9 @@
-import { useListCategories } from "@/hooks/use-gas-api";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Categories() {
-  const { data: categories, isLoading } = useListCategories();
+  // Static placeholder data for UI development
+  const categories: any[] = [];
 
   return (
     <div className="min-h-full bg-slate-50">
@@ -14,18 +13,12 @@ export default function Categories() {
 
       <div className="p-4">
         <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
-          {isLoading ? (
-             Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-4 border-b border-border last:border-0">
-                <Skeleton className="w-12 h-12 rounded-lg" />
-                <div className="flex-1">
-                  <Skeleton className="h-4 w-1/3 mb-2" />
-                  <Skeleton className="h-3 w-1/4" />
-                </div>
-              </div>
-            ))
+          {categories.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              Tidak ada kategori yang ditemukan
+            </div>
           ) : (
-            categories?.map((category: any) => (
+            categories.map((category: any) => (
               <Link key={category.id} href={`/products`}>
                 <div className="flex items-center gap-4 p-4 border-b border-border last:border-0 hover:bg-slate-50 transition-colors cursor-pointer">
                   <div className="bg-slate-100 rounded-lg w-12 h-12 flex items-center justify-center shrink-0 border border-slate-200">

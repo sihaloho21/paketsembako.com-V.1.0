@@ -1,10 +1,4 @@
-import {
-  useGetFeaturedProducts,
-  useGetPromoProducts,
-  useGetTrendingProducts,
-} from "@/hooks/use-gas-api";
 import { ProductCard } from "@/components/product-card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, Flame, Zap, Tag } from "lucide-react";
 import { Link } from "wouter";
 
@@ -20,9 +14,10 @@ const quickCats = [
 ];
 
 export default function Home() {
-  const { data: featured, isLoading: loadFeatured } = useGetFeaturedProducts();
-  const { data: promos, isLoading: loadPromos } = useGetPromoProducts();
-  const { data: trending, isLoading: loadTrending } = useGetTrendingProducts();
+  // Static placeholder data for UI development
+  const featured: any[] = [];
+  const promos: any[] = [];
+  const trending: any[] = [];
 
   return (
     <div className="bg-slate-100 pb-24">
@@ -98,13 +93,13 @@ export default function Home() {
         </div>
         <div className="overflow-x-auto pb-3 px-3 hide-scrollbar">
           <div className="flex gap-2.5 w-max">
-            {loadPromos
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
-                ))
-              : (Array.isArray(promos) ? promos : []).map((product: any) => (
-                  <ProductCard key={product.id} product={product} horizontal />
-                ))}
+            {promos.length === 0 ? (
+              <div className="text-xs text-muted-foreground px-2">No promos available</div>
+            ) : (
+              promos.map((product: any) => (
+                <ProductCard key={product.id} product={product} horizontal />
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -124,13 +119,13 @@ export default function Home() {
         </div>
         <div className="overflow-x-auto pb-3 px-3 hide-scrollbar">
           <div className="flex gap-2.5 w-max">
-            {loadTrending
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
-                ))
-              : (Array.isArray(trending) ? trending : []).map((product: any) => (
-                  <ProductCard key={product.id} product={product} horizontal />
-                ))}
+            {trending.length === 0 ? (
+              <div className="text-xs text-muted-foreground px-2">No trending products</div>
+            ) : (
+              trending.map((product: any) => (
+                <ProductCard key={product.id} product={product} horizontal />
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -150,54 +145,14 @@ export default function Home() {
         </div>
         <div className="bg-white px-3 pt-3 pb-3">
           <div className="grid grid-cols-2 gap-3">
-            {loadFeatured
-              ? Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-[240px] rounded-xl" />
-                ))
-              : (Array.isArray(featured) ? featured : []).slice(0, 6).map((product: any) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 6. Kamu Mungkin Suka ── */}
-      <section className="bg-white mb-2">
-        <div className="px-3 pt-3 pb-2 flex items-center justify-between">
-          <h2 className="text-[13px] font-bold text-foreground">Kamu Mungkin Suka</h2>
-          <Link href="/products" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
-            Lihat Semua <ChevronRight size={11} />
-          </Link>
-        </div>
-        <div className="overflow-x-auto pb-3 px-3 hide-scrollbar">
-          <div className="flex gap-2.5 w-max">
-            {loadFeatured
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
-                ))
-              : (Array.isArray(featured) ? featured : []).map((product: any) => (
-                  <ProductCard key={product.id} product={product} horizontal />
-                ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 8. Semua Produk grid ── */}
-      <section className="bg-white px-3 pt-3 pb-3">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[13px] font-bold text-foreground">Semua Produk</h2>
-          <Link href="/products" className="text-[11px] text-primary font-semibold flex items-center gap-0.5 hover:underline">
-            Lihat Semua <ChevronRight size={11} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {loadTrending
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-[240px] rounded-xl" />
-              ))
-            : (Array.isArray(trending) ? trending : []).slice(0, 8).map((product: any) => (
+            {featured.length === 0 ? (
+              <div className="col-span-2 text-center py-4 text-xs text-muted-foreground">No recommendations</div>
+            ) : (
+              featured.slice(0, 6).map((product: any) => (
                 <ProductCard key={product.id} product={product} />
-              ))}
+              ))
+            )}
+          </div>
         </div>
       </section>
 

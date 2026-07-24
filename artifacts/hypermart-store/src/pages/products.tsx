@@ -1,6 +1,4 @@
-import { useListProducts } from "@/hooks/use-gas-api";
 import { ProductCard } from "@/components/product-card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowUpDown, ArrowDown, ArrowUp, TrendingUp, Clock, Flame } from "lucide-react";
@@ -12,9 +10,8 @@ export default function Products() {
   const [activeTab, setActiveTab] = useState<MainTab>("popular");
   const [priceDir, setPriceDir] = useState<PriceDir>("harga-asc");
 
-  const sortParam = activeTab === "harga" ? priceDir : activeTab;
-
-  const { data: products, isLoading } = useListProducts({ sort: sortParam });
+  // Static placeholder data for UI development
+  const products: any[] = [];
 
   const tabs: { label: string; value: MainTab; icon: React.ReactNode }[] = [
     { label: "Populer", value: "popular", icon: <Flame size={13} /> },
@@ -86,7 +83,7 @@ export default function Products() {
       </div>
 
       {/* ── Result count ── */}
-      {!isLoading && products && (
+      {products && (
         <div className="px-4 pt-3 pb-1 text-xs text-muted-foreground">
           {products.length} produk ditemukan
         </div>
@@ -95,16 +92,12 @@ export default function Products() {
       {/* ── Product grid ── */}
       <div className="flex-1 px-3 pb-4">
         <div className="grid grid-cols-2 gap-3">
-          {isLoading
-            ? Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-[240px] rounded-xl" />
-              ))
-            : products?.map((product: any) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+          {products?.map((product: any) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
         </div>
 
-        {!isLoading && products?.length === 0 && (
+        {products?.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
             Tidak ada produk yang ditemukan
           </div>
