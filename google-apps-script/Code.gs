@@ -120,54 +120,69 @@ function getOrCreateSheet(sheetName, headers) {
  * @returns {Array<Object>} Array objek produk.
  */
 function getProducts(params) {
-  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('products');
-  if (!sheet) {
-    return [];
-  }
-
-  const data = sheet.getDataRange().getValues();
-  if (data.length === 0) {
-    return [];
-  }
-
-  const headers = data[0]; // Baris pertama adalah header
-  const products = [];
-
-  // Map kolom dari spreadsheet ke format API
-  const headerMap = {};
-  headers.forEach((header, index) => {
-    headerMap[header] = index;
-  });
-
-  // Process data rows (skip header)
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-    
-    // Skip empty rows
-    if (!row[headerMap['id']] && !row[headerMap['nama']]) {
-      continue;
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName('products');
+    if (!sheet) {
+      Logger.log('Sheet "products" not found');
+      return [];
     }
 
-    const product = {
-      id: headerMap['id'] !== undefined ? parseInt(row[headerMap['id']]) || i : i,
-      name: headerMap['nama'] !== undefined ? row[headerMap['nama']] || '' : '',
-      price: headerMap['harga'] !== undefined ? parseInt(row[headerMap['harga']]) || 0 : 0,
-      originalPrice: headerMap['harga_coret'] !== undefined ? parseInt(row[headerMap['harga_coret']]) || 0 : 0,
-      discountPercent: 0,
-      imageUrl: headerMap['gambar'] !== undefined ? row[headerMap['gambar']] || 'https://via.placeholder.com/200' : 'https://via.placeholder.com/200',
-      images: [],
-      categoryId: 1,
-      categoryName: 'Paket Sembako',
-      rating: 4.5,
-      reviewCount: 0,
-      sold: headerMap['stok'] !== undefined ? parseInt(row[headerMap['stok']]) || 0 : 0,
-      badge: 'Terlaris',
-      isPromo: false,
-      description: headerMap['nama'] !== undefined ? row[headerMap['nama']] || '' : '',
-      shelfLife: '6 Bulan',
-      deliveryInfo: '1-2 Jam Tiba',
-      variants: []
+    const data = sheet.getDataRange().getValues();
+    if (!data || data.length <= 1) {
+      Logger.log('No data found in sheet "products"');
+      return [];
+    }
+
+    const headers = data[0]; // Baris pertama adalah header
+    const products = [];
+
+    // Map kolom dari spreadsheet ke format API
+    const headerMap = {};
+    headers.forEach((header, index) => {
+      if (header) {
+        headerMap[String(header).toLowerCase().trim()] = index;
+      }
+    });
+
+    // Helper to get value by flexible header name
+    const getVal = (row, key) => {
+      const idx = headerMap[key.toLowerCase()];
+      return idx !== undefined ? row[idx] : undefined;
     };
+
+    // Process data rows (skip header)
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      
+      const idVal = getVal(row, 'id');
+      const namaVal = getVal(row, 'nama');
+      
+      // Skip empty rows
+      if (!idVal && !namaVal) {
+        continue;
+      }
+
+      const product = {
+        id: parseInt(idVal) || i,
+        name: String(namaVal || ''),
+        price: parseInt(getVal(row, 'harga')) || 0,
+        originalPrice: parseInt(getVal(row, 'harga_coret')) || 0,
+        discountPercent: 0,
+        imageUrl: String(getVal(row, 'gambar') || 'https://via.placeholder.com/200'),
+        images: [],
+        categoryId: 1,
+        categoryName: 'Paket Sembako',
+        rating: 4.5,
+        reviewCount: 0,
+        sold: parseInt(getVal(row, 'stok')) || 0,
+        badge: 'Terlaris',
+        isPromo: false,
+        description: String(namaVal || ''),
+        shelfLife: '6 Bulan',
+        deliveryInfo: '1-2 Jam Tiba',
+        variants: []
+      };
 
     // Fallback for originalPrice if it's 0 or missing
     if (product.originalPrice === 0) {
@@ -216,13 +231,17 @@ function getProducts(params) {
     }
   }
 
-  // Apply limit
-  if (params.limit) {
-    const limit = parseInt(params.limit);
-    filteredProducts = filteredProducts.slice(0, limit);
-  }
+    // Apply limit
+    if (params && params.limit) {
+      const limit = parseInt(params.limit);
+      filteredProducts = filteredProducts.slice(0, limit);
+    }
 
-  return filteredProducts;
+    return filteredProducts;
+  } catch (e) {
+    Logger.log('Error in getProducts: ' + e.toString());
+    return []; // Always return an array
+  }
 }
 
 /**

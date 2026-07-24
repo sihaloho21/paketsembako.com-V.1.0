@@ -102,7 +102,7 @@ export default function Home() {
               ? Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
                 ))
-              : promos?.map((product: any) => (
+              : (Array.isArray(promos) ? promos : []).map((product: any) => (
                   <ProductCard key={product.id} product={product} horizontal />
                 ))}
           </div>
@@ -128,7 +128,7 @@ export default function Home() {
               ? Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
                 ))
-              : trending?.map((product: any) => (
+              : (Array.isArray(trending) ? trending : []).map((product: any) => (
                   <ProductCard key={product.id} product={product} horizontal />
                 ))}
           </div>
@@ -175,7 +175,7 @@ export default function Home() {
               ? Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="w-[130px] h-[210px] rounded-xl shrink-0" />
                 ))
-              : featured?.map((product: any) => (
+              : (Array.isArray(featured) ? featured : []).map((product: any) => (
                   <ProductCard key={product.id} product={product} horizontal />
                 ))}
           </div>
