@@ -35,16 +35,16 @@ export async function callGAS<T = any>(params: GASRequestParams): Promise<T> {
   }
 
   const queryString = buildQueryString(params);
-  const url = `${config.apiBaseUrl}?${queryString}`;
+  // Cek apakah apiBaseUrl sudah memiliki tanda tanya
+  const separator = config.apiBaseUrl.includes('?') ? '&' : '?';
+  const url = `${config.apiBaseUrl}${separator}${queryString}`;
 
   try {
     const response = await fetch(url, {
       method: "GET",
       mode: "cors",
       cache: "no-cache",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      // Hapus Content-Type untuk menghindari preflight CORS pada GET request
     });
 
     if (!response.ok) {
@@ -174,7 +174,8 @@ export async function redeemVoucher(userId: string, voucherId: number) {
     throw new Error("Config not loaded. Call setupApiClient() first.");
   }
 
-  const url = `${config.apiBaseUrl}?action=redeemVoucher`;
+  const separator = config.apiBaseUrl.includes('?') ? '&' : '?';
+  const url = `${config.apiBaseUrl}${separator}action=redeemVoucher`;
 
   try {
     const response = await fetch(url, {
@@ -211,7 +212,8 @@ export async function updateUserXP(userId: string, xpToAdd: number) {
     throw new Error("Config not loaded. Call setupApiClient() first.");
   }
 
-  const url = `${config.apiBaseUrl}?action=updateUserXP`;
+  const separator = config.apiBaseUrl.includes('?') ? '&' : '?';
+  const url = `${config.apiBaseUrl}${separator}action=updateUserXP`;
 
   try {
     const response = await fetch(url, {
