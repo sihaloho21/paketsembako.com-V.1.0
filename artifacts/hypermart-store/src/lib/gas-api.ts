@@ -3,7 +3,7 @@
  * Menyediakan helper functions untuk memanggil endpoint Google Apps Script
  */
 
-import { getConfig } from "./config";
+import { getConfig, setupApiClient } from "./config";
 
 export interface GASRequestParams {
   action: string;
@@ -29,9 +29,13 @@ function buildQueryString(params: GASRequestParams): string {
  * @returns Promise dengan data yang di-return dari GAS
  */
 export async function callGAS<T = any>(params: GASRequestParams): Promise<T> {
-  const config = getConfig();
+  let config = getConfig();
   if (!config) {
-    throw new Error("Config not loaded. Call setupApiClient() first.");
+    await setupApiClient();
+    config = getConfig();
+  }
+  if (!config) {
+    throw new Error("Config not loaded even after setup.");
   }
 
   const queryString = buildQueryString(params);
@@ -169,9 +173,13 @@ export async function getPointsHistory(userId: string) {
  * Tukar poin user dengan voucher
  */
 export async function redeemVoucher(userId: string, voucherId: number) {
-  const config = getConfig();
+  let config = getConfig();
   if (!config) {
-    throw new Error("Config not loaded. Call setupApiClient() first.");
+    await setupApiClient();
+    config = getConfig();
+  }
+  if (!config) {
+    throw new Error("Config not loaded.");
   }
 
   const separator = config.apiBaseUrl.includes('?') ? '&' : '?';
@@ -207,9 +215,13 @@ export async function redeemVoucher(userId: string, voucherId: number) {
  * Update XP user
  */
 export async function updateUserXP(userId: string, xpToAdd: number) {
-  const config = getConfig();
+  let config = getConfig();
   if (!config) {
-    throw new Error("Config not loaded. Call setupApiClient() first.");
+    await setupApiClient();
+    config = getConfig();
+  }
+  if (!config) {
+    throw new Error("Config not loaded.");
   }
 
   const separator = config.apiBaseUrl.includes('?') ? '&' : '?';

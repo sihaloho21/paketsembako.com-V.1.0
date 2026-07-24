@@ -149,25 +149,30 @@ function getProducts(params) {
     }
 
     const product = {
-      id: parseInt(row[headerMap['id']]) || i,
-      name: row[headerMap['nama']] || '',
-      price: parseInt(row[headerMap['harga']]) || 0,
-      originalPrice: parseInt(row[headerMap['harga_coret']]) || parseInt(row[headerMap['harga']]) || 0,
+      id: headerMap['id'] !== undefined ? parseInt(row[headerMap['id']]) || i : i,
+      name: headerMap['nama'] !== undefined ? row[headerMap['nama']] || '' : '',
+      price: headerMap['harga'] !== undefined ? parseInt(row[headerMap['harga']]) || 0 : 0,
+      originalPrice: headerMap['harga_coret'] !== undefined ? parseInt(row[headerMap['harga_coret']]) || 0 : 0,
       discountPercent: 0,
-      imageUrl: row[headerMap['gambar']] || 'https://via.placeholder.com/200',
+      imageUrl: headerMap['gambar'] !== undefined ? row[headerMap['gambar']] || 'https://via.placeholder.com/200' : 'https://via.placeholder.com/200',
       images: [],
       categoryId: 1,
       categoryName: 'Paket Sembako',
       rating: 4.5,
       reviewCount: 0,
-      sold: parseInt(row[headerMap['stok']]) || 0,
+      sold: headerMap['stok'] !== undefined ? parseInt(row[headerMap['stok']]) || 0 : 0,
       badge: 'Terlaris',
       isPromo: false,
-      description: row[headerMap['nama']] || '',
+      description: headerMap['nama'] !== undefined ? row[headerMap['nama']] || '' : '',
       shelfLife: '6 Bulan',
       deliveryInfo: '1-2 Jam Tiba',
       variants: []
     };
+
+    // Fallback for originalPrice if it's 0 or missing
+    if (product.originalPrice === 0) {
+      product.originalPrice = product.price;
+    }
 
     // Calculate discount percent jika ada harga coret
     if (product.originalPrice > product.price) {
