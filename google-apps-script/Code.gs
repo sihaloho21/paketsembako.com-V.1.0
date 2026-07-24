@@ -1,4 +1,4 @@
-const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID'; // Ganti dengan ID Google Spreadsheet Anda
+const SPREADSHEET_ID = '174qAwA2hddfQOFUFDx7czOtpRlD9WUiiIaf6Yao8WRc'; // ID Google Spreadsheet
 
 /**
  * Fungsi utama untuk menangani request GET.
@@ -109,58 +109,71 @@ function getOrCreateSheet(sheetName, headers) {
     sheet = ss.insertSheet(sheetName);
     sheet.appendRow(headers);
     Logger.log(`Sheet '${sheetName}' created with headers: ${headers.join(', ')}`);
-  } else {
-    // Cek apakah header sudah sesuai
-    const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    if (JSON.stringify(existingHeaders) !== JSON.stringify(headers)) {
-      Logger.log(`Headers for sheet '${sheetName}' are different. Updating headers.`);
-      sheet.clearContents(); // Clear existing content
-      sheet.appendRow(headers); // Write new headers
-    }
   }
   return sheet;
 }
 
 /**
- * Mengambil semua produk dari sheet 'Products'.
+ * Mengambil semua produk dari sheet 'products'.
  * Mendukung filter categoryId, sort, isPromo, isTrending, limit.
  * @param {Object} params - Parameter filter dari request.
  * @returns {Array<Object>} Array objek produk.
  */
 function getProducts(params) {
-  const productHeaders = [
-    'id', 'name', 'price', 'originalPrice', 'discountPercent', 'imageUrl', 'images', 
-    'categoryId', 'categoryName', 'rating', 'reviewCount', 'sold', 'badge', 
-    'isPromo', 'description', 'shelfLife', 'deliveryInfo', 'variants'
-  ];
-  const sheet = getOrCreateSheet('Products', productHeaders);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('products');
+  if (!sheet) {
+    return [];
+  }
+
   const data = sheet.getDataRange().getValues();
-  const headers = data.shift(); // Baris pertama adalah header
+  if (data.length === 0) {
+    return [];
+  }
+
+  const headers = data[0]; // Baris pertama adalah header
   const products = [];
 
-  for (let i = 0; i < data.length; i++) {
+  // Map kolom dari spreadsheet ke format API
+  const headerMap = {};
+  headers.forEach((header, index) => {
+    headerMap[header] = index;
+  });
+
+  // Process data rows (skip header)
+  for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    const product = {};
-    for (let j = 0; j < headers.length; j++) {
-      let value = row[j];
-      // Konversi tipe data dari string/number di spreadsheet ke tipe yang sesuai
-      if (headers[j] === 'id' || headers[j] === 'price' || headers[j] === 'originalPrice' ||
-          headers[j] === 'discountPercent' || headers[j] === 'categoryId' ||
-          headers[j] === 'reviewCount' || headers[j] === 'sold') {
-        value = parseInt(value);
-      } else if (headers[j] === 'rating') {
-        value = parseFloat(value);
-      } else if (headers[j] === 'isPromo') {
-        value = String(value).toLowerCase() === 'true';
-      } else if (headers[j] === 'images' || headers[j] === 'variants') {
-        try {
-          value = JSON.parse(value);
-        } catch (e) {
-          value = []; // Default ke array kosong jika parsing gagal
-        }
-      }
-      product[headers[j]] = value;
+    
+    // Skip empty rows
+    if (!row[headerMap['id']] && !row[headerMap['nama']]) {
+      continue;
     }
+
+    const product = {
+      id: parseInt(row[headerMap['id']]) || i,
+      name: row[headerMap['nama']] || '',
+      price: parseInt(row[headerMap['harga']]) || 0,
+      originalPrice: parseInt(row[headerMap['harga_coret']]) || parseInt(row[headerMap['harga']]) || 0,
+      discountPercent: 0,
+      imageUrl: row[headerMap['gambar']] || 'https://via.placeholder.com/200',
+      images: [],
+      categoryId: 1,
+      categoryName: 'Paket Sembako',
+      rating: 4.5,
+      reviewCount: 0,
+      sold: parseInt(row[headerMap['stok']]) || 0,
+      badge: 'Terlaris',
+      isPromo: false,
+      description: row[headerMap['nama']] || '',
+      shelfLife: '6 Bulan',
+      deliveryInfo: '1-2 Jam Tiba',
+      variants: []
+    };
+
+    // Calculate discount percent jika ada harga coret
+    if (product.originalPrice > product.price) {
+      product.discountPercent = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+    }
+
     products.push(product);
   }
 
@@ -174,7 +187,6 @@ function getProducts(params) {
   if (params.isPromo) {
     filteredProducts = filteredProducts.filter(p => p.isPromo === (String(params.isPromo).toLowerCase() === 'true'));
   }
-  // Untuk isTrending, kita bisa asumsikan produk dengan 'sold' tertinggi atau rating tertinggi
   if (params.isTrending) {
     filteredProducts = filteredProducts.sort((a, b) => b.sold - a.sold);
   }
@@ -189,15 +201,12 @@ function getProducts(params) {
         filteredProducts.sort((a, b) => b.price - a.price);
         break;
       case 'terbaru':
-        // Asumsi ada kolom 'createdAt' atau 'id' yang bisa digunakan untuk sorting terbaru
-        // Untuk saat ini, kita bisa sort berdasarkan ID tertinggi sebagai proxy
         filteredProducts.sort((a, b) => b.id - a.id);
         break;
       case 'teratas':
         filteredProducts.sort((a, b) => b.rating - a.rating);
         break;
       default:
-        // No specific sort
         break;
     }
   }
@@ -212,7 +221,7 @@ function getProducts(params) {
 }
 
 /**
- * Mengambil detail produk berdasarkan ID dari sheet 'Products'.
+ * Mengambil detail produk berdasarkan ID dari sheet 'products'.
  * @param {string} id - ID produk.
  * @returns {Object} Objek produk.
  */
@@ -441,7 +450,6 @@ function getPointsHistory(userId) {
  * @returns {Object} Hasil penukaran.
  */
 function redeemVoucher(userId, voucherId) {
-  // 1. Validasi & Keamanan Input
   if (!userId) {
     throw new Error('Parameter userId wajib diisi');
   }
@@ -449,16 +457,11 @@ function redeemVoucher(userId, voucherId) {
     throw new Error('Parameter voucherId wajib diisi');
   }
 
-  // 3. Atomic Transactions: Menggunakan LockService untuk mencegah race condition
   const lock = LockService.getScriptLock();
   try {
-    // Tunggu hingga 30 detik untuk mendapatkan lock
     lock.waitLock(30000);
     
-    // Get user (Data terbaru setelah lock didapatkan)
     const user = getUser(userId);
-    
-    // Get voucher
     const vouchers = getAvailableVouchers();
     const voucherMap = {};
     vouchers.forEach(v => voucherMap[v.id] = v);
@@ -470,23 +473,22 @@ function redeemVoucher(userId, voucherId) {
     }
     
     if (user.points < voucher.points) {
-      throw new Error('Insufficient points. Required: ' + voucher.points + ', Available: ' + user.points);
+      throw new Error('Insufficient points to redeem this voucher');
     }
-    
-    // Deduct points from user
-    const newPoints = user.points - voucher.points;
+
+    // Update user points
     const userSheet = getOrCreateSheet('Users', ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl']);
-    
-    // Update points
+    const newPoints = user.points - voucher.points;
     userSheet.getRange(user._rowIndex, 4).setValue(newPoints);
-    
-    // Create user voucher record
-    const userVoucherSheet = getOrCreateSheet('UserVouchers', ['id', 'userId', 'voucherId', 'code', 'redeemedAt', 'expiryAt', 'status']);
+
+    // Generate voucher code
+    const voucherCode = generateRandomCode(8);
     const now = new Date();
     const expiryDate = new Date(now.getTime() + voucher.expiryDays * 24 * 60 * 60 * 1000);
-    const voucherCode = 'VCH-' + generateRandomCode(8);
+
+    // Add to UserVouchers sheet
+    const userVoucherSheet = getOrCreateSheet('UserVouchers', ['id', 'userId', 'voucherId', 'code', 'redeemedAt', 'expiryAt', 'status']);
     const uvId = 'uv-' + Math.random().toString(36).substr(2, 9);
-    
     userVoucherSheet.appendRow([
       uvId,
       userId,
@@ -494,10 +496,10 @@ function redeemVoucher(userId, voucherId) {
       voucherCode,
       now.toISOString(),
       expiryDate.toISOString(),
-      'Active'
+      'active'
     ]);
-    
-    // Record points history
+
+    // Add to PointsHistory sheet
     const historySheet = getOrCreateSheet('PointsHistory', ['id', 'userId', 'type', 'amount', 'description', 'createdAt']);
     const phId = 'ph-' + Math.random().toString(36).substr(2, 9);
     historySheet.appendRow([
@@ -521,7 +523,6 @@ function redeemVoucher(userId, voucherId) {
   } catch (error) {
     throw error;
   } finally {
-    // Selalu lepaskan lock
     lock.releaseLock();
   }
 }
@@ -533,7 +534,6 @@ function redeemVoucher(userId, voucherId) {
  * @returns {Object} Hasil update.
  */
 function updateUserXP(userId, xpToAdd) {
-  // 1. Validasi & Keamanan Input
   if (!userId) {
     throw new Error('Parameter userId wajib diisi');
   }
@@ -541,7 +541,6 @@ function updateUserXP(userId, xpToAdd) {
     throw new Error('Parameter xpToAdd wajib diisi');
   }
 
-  // 3. Atomic Transactions: Menggunakan LockService
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(30000);
@@ -617,7 +616,9 @@ function seedDummyVouchers(sheet) {
   Logger.log('Dummy vouchers seeded successfully.');
 }
 
-// Fungsi ini akan dijalankan saat Web App di-deploy atau dibuka pertama kali
+/**
+ * Fungsi ini akan dijalankan saat Web App di-deploy atau dibuka pertama kali
+ */
 function setupInitialSheets() {
   const productHeaders = [
     'id', 'name', 'price', 'originalPrice', 'discountPercent', 'imageUrl', 'images', 
@@ -663,11 +664,3 @@ function logAction(action, userId, message) {
 function logError(action, error) {
   logAction('ERROR', '', action + ': ' + error.message);
 }
-
-// Panggil setupInitialSheets() saat script di-deploy atau di-update
-// Ini akan memastikan sheet dan header ada saat pertama kali digunakan
-// Anda bisa memanggilnya secara manual sekali setelah deployment awal jika diperlukan
-// atau menambahkannya ke fungsi onOpen() jika ingin dijalankan setiap kali spreadsheet dibuka
-// function onOpen() {
-//   setupInitialSheets();
-// }
