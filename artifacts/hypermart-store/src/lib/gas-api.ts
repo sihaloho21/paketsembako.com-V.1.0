@@ -1,9 +1,7 @@
 /**
- * Google Apps Script API Wrapper
- * Menyediakan helper functions untuk memanggil endpoint Google Apps Script
+ * Mock API Wrapper for Frontend-only Development
+ * Menyediakan mock data untuk keperluan pengembangan frontend
  */
-
-import { getConfig, setupApiClient } from "./config";
 
 export interface GASRequestParams {
   action: string;
@@ -11,256 +9,142 @@ export interface GASRequestParams {
 }
 
 /**
- * Helper untuk membuat URL dengan query parameters
+ * Mock data untuk produk
  */
-function buildQueryString(params: GASRequestParams): string {
-  const searchParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined) {
-      searchParams.append(key, String(value));
-    }
-  });
-  return searchParams.toString();
-}
+const MOCK_PRODUCTS = [
+  {
+    id: 1,
+    name: "Beras Premium 5kg",
+    price: 65000,
+    image: "https://placehold.co/400x400?text=Beras",
+    categoryId: 1,
+    isPromo: true,
+    isTrending: true,
+    description: "Beras kualitas premium pulen dan bersih."
+  },
+  {
+    id: 2,
+    name: "Minyak Goreng 2L",
+    price: 32000,
+    image: "https://placehold.co/400x400?text=Minyak",
+    categoryId: 2,
+    isPromo: false,
+    isTrending: true,
+    description: "Minyak goreng kelapa sawit murni."
+  },
+  {
+    id: 3,
+    name: "Gula Pasir 1kg",
+    price: 15000,
+    image: "https://placehold.co/400x400?text=Gula",
+    categoryId: 2,
+    isPromo: true,
+    isTrending: false,
+    description: "Gula pasir putih bersih."
+  }
+];
+
+const MOCK_CATEGORIES = [
+  { id: 1, name: "Beras", icon: "B" },
+  { id: 2, name: "Kebutuhan Pokok", icon: "K" },
+  { id: 3, name: "Minuman", icon: "M" }
+];
 
 /**
- * Fetch data dari Google Apps Script
- * @param params - Object berisi action dan parameter lainnya
- * @returns Promise dengan data yang di-return dari GAS
+ * Mock function untuk memanggil API
  */
 export async function callGAS<T = any>(params: GASRequestParams): Promise<T> {
-  let config = getConfig();
-  if (!config) {
-    await setupApiClient();
-    config = getConfig();
-  }
-  if (!config) {
-    throw new Error("Config not loaded even after setup.");
-  }
+  console.log("Mock API Call:", params);
+  
+  // Simulasi network delay
+  await new Promise(resolve => setTimeout(resolve, 500));
 
-  const queryString = buildQueryString(params);
-  // Cek apakah apiBaseUrl sudah memiliki tanda tanya
-  const separator = config.apiBaseUrl.includes('?') ? '&' : '?';
-  const url = `${config.apiBaseUrl}${separator}${queryString}`;
+  switch (params.action) {
+    case "getProducts":
+      let products = [...MOCK_PRODUCTS];
+      if (params.categoryId) products = products.filter(p => p.categoryId === Number(params.categoryId));
+      if (params.isPromo) products = products.filter(p => p.isPromo);
+      if (params.isTrending) products = products.filter(p => p.isTrending);
+      return products as any;
+    
+    case "getProduct":
+      return MOCK_PRODUCTS.find(p => p.id === Number(params.id)) as any;
+    
+    case "getCategories":
+      return MOCK_CATEGORIES as any;
+    
+    case "getUser":
+      return {
+        id: params.id,
+        name: "Mock User",
+        email: "user@example.com",
+        points: 1000,
+        xp: 500,
+        level: 5
+      } as any;
 
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      mode: "cors",
-      cache: "no-cache",
-      // Hapus Content-Type untuk menghindari preflight CORS pada GET request
-    });
+    case "getAvailableVouchers":
+      return [
+        { id: 1, title: "Diskon 10rb", points: 100 },
+        { id: 2, title: "Gratis Ongkir", points: 200 }
+      ] as any;
 
-    if (!response.ok) {
-      throw new Error(`GAS API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data as T;
-  } catch (error) {
-    console.error("Error calling GAS API:", error);
-    throw error;
+    default:
+      return {} as any;
   }
 }
 
-/**
- * Fetch semua produk dengan filter opsional
- */
-export async function getProducts(filters?: {
-  categoryId?: number;
-  sort?: string;
-  isPromo?: boolean;
-  isTrending?: boolean;
-  limit?: number;
-}) {
-  return callGAS({
-    action: "getProducts",
-    ...filters,
-  });
+export async function getProducts(filters?: any) {
+  return callGAS({ action: "getProducts", ...filters });
 }
 
-/**
- * Fetch detail produk berdasarkan ID
- */
 export async function getProduct(id: number) {
-  return callGAS({
-    action: "getProduct",
-    id,
-  });
+  return callGAS({ action: "getProduct", id });
 }
 
-/**
- * Fetch produk featured
- */
 export async function getFeaturedProducts() {
-  return callGAS({
-    action: "getProducts",
-    limit: 10,
-  });
+  return getProducts({ limit: 10 });
 }
 
-/**
- * Fetch produk promo
- */
 export async function getPromoProducts() {
-  return callGAS({
-    action: "getProducts",
-    isPromo: true,
-    limit: 10,
-  });
+  return getProducts({ isPromo: true, limit: 10 });
 }
 
-/**
- * Fetch produk trending
- */
 export async function getTrendingProducts() {
-  return callGAS({
-    action: "getProducts",
-    isTrending: true,
-    limit: 10,
-  });
+  return getProducts({ isTrending: true, limit: 10 });
 }
 
-/**
- * Fetch semua kategori
- */
 export async function getCategories() {
-  return callGAS({
-    action: "getCategories",
-  });
+  return callGAS({ action: "getCategories" });
 }
 
-/**
- * Fetch profil user berdasarkan ID
- */
 export async function getUser(id: string) {
-  return callGAS({
-    action: "getUser",
-    id,
-  });
+  return callGAS({ action: "getUser", id });
 }
 
-/**
- * Fetch semua voucher yang tersedia untuk ditukar
- */
 export async function getAvailableVouchers() {
-  return callGAS({
-    action: "getAvailableVouchers",
-  });
+  return callGAS({ action: "getAvailableVouchers" });
 }
 
-/**
- * Fetch voucher yang sudah ditukar oleh user
- */
 export async function getUserVouchers(userId: string) {
-  return callGAS({
-    action: "getUserVouchers",
-    userId,
-  });
+  return callGAS({ action: "getUserVouchers", userId });
 }
 
-/**
- * Fetch riwayat poin user
- */
 export async function getPointsHistory(userId: string) {
-  return callGAS({
-    action: "getPointsHistory",
-    userId,
-  });
+  return callGAS({ action: "getPointsHistory", userId });
 }
 
-/**
- * Tukar poin user dengan voucher
- */
 export async function redeemVoucher(userId: string, voucherId: number) {
-  let config = getConfig();
-  if (!config) {
-    await setupApiClient();
-    config = getConfig();
-  }
-  if (!config) {
-    throw new Error("Config not loaded.");
-  }
-
-  const separator = config.apiBaseUrl.includes('?') ? '&' : '?';
-  const url = `${config.apiBaseUrl}${separator}action=redeemVoucher`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      mode: "cors",
-      cache: "no-cache",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId,
-        voucherId,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`GAS API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error redeeming voucher:", error);
-    throw error;
-  }
+  console.log("Mock Redeem:", userId, voucherId);
+  return { success: true };
 }
 
-/**
- * Update XP user
- */
 export async function updateUserXP(userId: string, xpToAdd: number) {
-  let config = getConfig();
-  if (!config) {
-    await setupApiClient();
-    config = getConfig();
-  }
-  if (!config) {
-    throw new Error("Config not loaded.");
-  }
-
-  const separator = config.apiBaseUrl.includes('?') ? '&' : '?';
-  const url = `${config.apiBaseUrl}${separator}action=updateUserXP`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      mode: "cors",
-      cache: "no-cache",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId,
-        xpToAdd,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`GAS API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error updating user XP:", error);
-    throw error;
-  }
+  console.log("Mock XP Update:", userId, xpToAdd);
+  return { success: true };
 }
 
-/**
- * Inisialisasi user baru atau cek apakah user sudah terdaftar
- */
 export async function initializeUser(userId: string, name?: string, email?: string) {
-  return callGAS({
-    action: "initializeUser",
-    id: userId,
-    name,
-    email,
-  });
+  console.log("Mock User Init:", userId, name, email);
+  return { success: true };
 }
