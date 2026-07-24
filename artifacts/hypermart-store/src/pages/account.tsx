@@ -16,10 +16,8 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { useGetUser, useGetUserVouchers } from "@/hooks/use-gas-api";
-import { useState } from "react";
-
-// Default user ID for demo (in production, this would come from auth context)
-const DEFAULT_USER_ID = "user-1";
+import { useUserId } from "@/hooks/use-user-id";
+import { TextSkeleton } from "@/components/skeletons";
 
 // Level progression thresholds
 const LEVEL_THRESHOLDS = {
@@ -42,7 +40,7 @@ interface MenuSection {
 }
 
 export default function Account() {
-  const [userId] = useState(DEFAULT_USER_ID);
+  const { userId, isLoaded } = useUserId();
   const { data: user, isLoading: userLoading } = useGetUser(userId);
   const { data: userVouchers, isLoading: vouchersLoading } = useGetUserVouchers(userId);
 
@@ -84,6 +82,7 @@ export default function Account() {
   const userInitial = user?.name ? getInitials(user.name) : "U";
   const userName = user?.name || "User";
   const userLevel = user?.level || "Benih";
+  const isLoadingUser = userLoading || !isLoaded;
 
   const menuSections: MenuSection[] = [
     {
@@ -196,15 +195,21 @@ export default function Account() {
       {/* User profile card */}
       <div className="bg-white px-4 py-5 flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-base font-bold text-foreground leading-tight">
-            {userLoading ? "Loading..." : userName}
-          </h2>
-          <button
-            data-testid="button-ubah-akun"
-            className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 hover:text-primary transition-colors"
-          >
-            Ubah Akun <Pencil size={11} />
-          </button>
+          {isLoadingUser ? (
+            <TextSkeleton lines={2} />
+          ) : (
+            <>
+              <h2 className="text-base font-bold text-foreground leading-tight">
+                {userName}
+              </h2>
+              <button
+                data-testid="button-ubah-akun"
+                className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 hover:text-primary transition-colors"
+              >
+                Ubah Akun <Pencil size={11} />
+              </button>
+            </>
+          )}
         </div>
         {/* Avatar circle */}
         <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center border-2 border-green-200">

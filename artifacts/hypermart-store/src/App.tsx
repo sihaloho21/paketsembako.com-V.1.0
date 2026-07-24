@@ -8,17 +8,21 @@ import Account from "./pages/account";
 import Poin from "./pages/poin";
 import Level from "./pages/level";
 import Voucher from "./pages/voucher";
+import XPHistory from "./pages/xp-history";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { setupApiClient } from "@/lib/config";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { useAutoRegister } from "@/hooks/use-auto-register";
 
 const queryClient = new QueryClient();
 
 function AppContent() {
   const [isConfigReady, setIsConfigReady] = useState(false);
+  useAutoRegister();
 
   useEffect(() => {
     // Setup API client dengan config dari public/config.json
@@ -59,6 +63,7 @@ function Router() {
         <Route path="/poin" component={Poin} />
         <Route path="/level" component={Level} />
         <Route path="/voucher" component={Voucher} />
+        <Route path="/xp-history" component={XPHistory} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -70,7 +75,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AppContent />
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>
