@@ -1,4 +1,4 @@
-const SPREADSHEET_ID = '174qAwA2hddfQOFUFDx7czOtpRlD9WUiiIaf6Yao8WRc'; // ID Google Spreadsheet
+const SPREADSHEET_ID = '1v6Ee9Mxa1gLsccf5U_062y1meYxvd4CieDPvYk4bFvA'; // ID Google Spreadsheet
 
 /**
  * Fungsi utama untuk menangani request GET.
