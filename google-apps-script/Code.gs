@@ -448,69 +448,82 @@ function redeemVoucher(userId, voucherId) {
   if (!voucherId) {
     throw new Error('Parameter voucherId wajib diisi');
   }
-  
-  // Get user (Sudah dioptimasi dengan _rowIndex)
-  const user = getUser(userId);
-  
-  // Get voucher
-  const vouchers = getAvailableVouchers();
-  // Optimasi: Mapping voucher untuk pencarian cepat
-  const voucherMap = {};
-  vouchers.forEach(v => voucherMap[v.id] = v);
-  
-  const voucher = voucherMap[parseInt(voucherId)];
-  
-  if (!voucher) {
-    throw new Error('Voucher not found with ID: ' + voucherId);
+
+  // 3. Atomic Transactions: Menggunakan LockService untuk mencegah race condition
+  const lock = LockService.getScriptLock();
+  try {
+    // Tunggu hingga 30 detik untuk mendapatkan lock
+    lock.waitLock(30000);
+    
+    // Get user (Data terbaru setelah lock didapatkan)
+    const user = getUser(userId);
+    
+    // Get voucher
+    const vouchers = getAvailableVouchers();
+    const voucherMap = {};
+    vouchers.forEach(v => voucherMap[v.id] = v);
+    
+    const voucher = voucherMap[parseInt(voucherId)];
+    
+    if (!voucher) {
+      throw new Error('Voucher not found with ID: ' + voucherId);
+    }
+    
+    if (user.points < voucher.points) {
+      throw new Error('Insufficient points. Required: ' + voucher.points + ', Available: ' + user.points);
+    }
+    
+    // Deduct points from user
+    const newPoints = user.points - voucher.points;
+    const userSheet = getOrCreateSheet('Users', ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl']);
+    
+    // Update points
+    userSheet.getRange(user._rowIndex, 4).setValue(newPoints);
+    
+    // Create user voucher record
+    const userVoucherSheet = getOrCreateSheet('UserVouchers', ['id', 'userId', 'voucherId', 'code', 'redeemedAt', 'expiryAt', 'status']);
+    const now = new Date();
+    const expiryDate = new Date(now.getTime() + voucher.expiryDays * 24 * 60 * 60 * 1000);
+    const voucherCode = 'VCH-' + generateRandomCode(8);
+    const uvId = 'uv-' + Math.random().toString(36).substr(2, 9);
+    
+    userVoucherSheet.appendRow([
+      uvId,
+      userId,
+      voucherId,
+      voucherCode,
+      now.toISOString(),
+      expiryDate.toISOString(),
+      'Active'
+    ]);
+    
+    // Record points history
+    const historySheet = getOrCreateSheet('PointsHistory', ['id', 'userId', 'type', 'amount', 'description', 'createdAt']);
+    const phId = 'ph-' + Math.random().toString(36).substr(2, 9);
+    historySheet.appendRow([
+      phId,
+      userId,
+      'Redeem',
+      -voucher.points,
+      'Tukar Voucher: ' + voucher.title,
+      now.toISOString()
+    ]);
+
+    logAction('VOUCHER_REDEEMED', userId, `Redeemed voucher ${voucherId} for ${voucher.points} points`);
+    
+    return {
+      success: true,
+      message: 'Voucher redeemed successfully',
+      voucherCode: voucherCode,
+      newPoints: newPoints,
+      userVoucherId: uvId
+    };
+  } catch (error) {
+    throw error;
+  } finally {
+    // Selalu lepaskan lock
+    lock.releaseLock();
   }
-  
-  if (user.points < voucher.points) {
-    throw new Error('Insufficient points. Required: ' + voucher.points + ', Available: ' + user.points);
-  }
-  
-  // Deduct points from user
-  const newPoints = user.points - voucher.points;
-  const userSheet = getOrCreateSheet('Users', ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl']);
-  
-  // Optimasi: Langsung update menggunakan _rowIndex tanpa looping lagi
-  userSheet.getRange(user._rowIndex, 4).setValue(newPoints); // Update points column (kolom 4)
-  
-  // Create user voucher record
-  const userVoucherSheet = getOrCreateSheet('UserVouchers', ['id', 'userId', 'voucherId', 'code', 'redeemedAt', 'expiryAt', 'status']);
-  const now = new Date();
-  const expiryDate = new Date(now.getTime() + voucher.expiryDays * 24 * 60 * 60 * 1000);
-  const voucherCode = 'VCH-' + generateRandomCode(8);
-  const uvId = 'uv-' + Math.random().toString(36).substr(2, 9);
-  
-  userVoucherSheet.appendRow([
-    uvId,
-    userId,
-    voucherId,
-    voucherCode,
-    now.toISOString(),
-    expiryDate.toISOString(),
-    'Active'
-  ]);
-  
-  // Record points history
-  const historySheet = getOrCreateSheet('PointsHistory', ['id', 'userId', 'type', 'amount', 'description', 'createdAt']);
-  const phId = 'ph-' + Math.random().toString(36).substr(2, 9);
-  historySheet.appendRow([
-    phId,
-    userId,
-    'Redeem',
-    -voucher.points,
-    'Tukar Voucher: ' + voucher.title,
-    now.toISOString()
-  ]);
-  
-  return {
-    success: true,
-    message: 'Voucher redeemed successfully',
-    voucherCode: voucherCode,
-    newPoints: newPoints,
-    userVoucherId: uvId
-  };
 }
 
 /**
@@ -527,38 +540,47 @@ function updateUserXP(userId, xpToAdd) {
   if (xpToAdd === undefined || xpToAdd === null) {
     throw new Error('Parameter xpToAdd wajib diisi');
   }
-  
-  const user = getUser(userId); // Sudah dioptimasi dengan _rowIndex
-  const newXP = user.xp + xpToAdd;
-  
-  // Level progression logic
-  const levelThresholds = {
-    'Benih': 0,
-    'Bunga': 750,
-    'Buah': 1500,
-    'Panen': 3000
-  };
-  
-  let newLevel = user.level;
-  for (const [levelName, threshold] of Object.entries(levelThresholds)) {
-    if (newXP >= threshold) {
-      newLevel = levelName;
+
+  // 3. Atomic Transactions: Menggunakan LockService
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+    
+    const user = getUser(userId);
+    const newXP = user.xp + xpToAdd;
+    
+    // Level progression logic
+    const levelThresholds = {
+      'Benih': 0,
+      'Bunga': 750,
+      'Buah': 1500,
+      'Panen': 3000
+    };
+    
+    let newLevel = user.level;
+    for (const [levelName, threshold] of Object.entries(levelThresholds)) {
+      if (newXP >= threshold) {
+        newLevel = levelName;
+      }
     }
+    
+    // Update user sheet
+    const userSheet = getOrCreateSheet('Users', ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl']);
+    
+    userSheet.getRange(user._rowIndex, 5).setValue(newXP);
+    userSheet.getRange(user._rowIndex, 6).setValue(newLevel);
+    
+    return {
+      success: true,
+      newXP: newXP,
+      newLevel: newLevel,
+      levelChanged: newLevel !== user.level
+    };
+  } catch (error) {
+    throw error;
+  } finally {
+    lock.releaseLock();
   }
-  
-  // Update user sheet
-  const userSheet = getOrCreateSheet('Users', ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl']);
-  
-  // Optimasi: Langsung update menggunakan _rowIndex
-  userSheet.getRange(user._rowIndex, 5).setValue(newXP); // Update XP column (kolom 5)
-  userSheet.getRange(user._rowIndex, 6).setValue(newLevel); // Update level column (kolom 6)
-  
-  return {
-    success: true,
-    newXP: newXP,
-    newLevel: newLevel,
-    levelChanged: newLevel !== user.level
-  };
 }
 
 /**
