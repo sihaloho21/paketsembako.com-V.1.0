@@ -3,7 +3,7 @@
  * Menyediakan helper functions untuk memanggil endpoint Google Apps Script
  */
 
-import { getConfig } from "./config";
+import { getConfig, setupApiClient } from "./config";
 
 export interface GASRequestParams {
   action: string;
@@ -29,22 +29,26 @@ function buildQueryString(params: GASRequestParams): string {
  * @returns Promise dengan data yang di-return dari GAS
  */
 export async function callGAS<T = any>(params: GASRequestParams): Promise<T> {
-  const config = getConfig();
+  let config = getConfig();
   if (!config) {
-    throw new Error("Config not loaded. Call setupApiClient() first.");
+    await setupApiClient();
+    config = getConfig();
+  }
+  if (!config) {
+    throw new Error("Config not loaded even after setup.");
   }
 
   const queryString = buildQueryString(params);
-  const url = `${config.apiBaseUrl}?${queryString}`;
+  // Cek apakah apiBaseUrl sudah memiliki tanda tanya
+  const separator = config.apiBaseUrl.includes('?') ? '&' : '?';
+  const url = `${config.apiBaseUrl}${separator}${queryString}`;
 
   try {
     const response = await fetch(url, {
       method: "GET",
       mode: "cors",
       cache: "no-cache",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      // Hapus Content-Type untuk menghindari preflight CORS pada GET request
     });
 
     if (!response.ok) {
@@ -169,12 +173,17 @@ export async function getPointsHistory(userId: string) {
  * Tukar poin user dengan voucher
  */
 export async function redeemVoucher(userId: string, voucherId: number) {
-  const config = getConfig();
+  let config = getConfig();
   if (!config) {
-    throw new Error("Config not loaded. Call setupApiClient() first.");
+    await setupApiClient();
+    config = getConfig();
+  }
+  if (!config) {
+    throw new Error("Config not loaded.");
   }
 
-  const url = `${config.apiBaseUrl}?action=redeemVoucher`;
+  const separator = config.apiBaseUrl.includes('?') ? '&' : '?';
+  const url = `${config.apiBaseUrl}${separator}action=redeemVoucher`;
 
   try {
     const response = await fetch(url, {
@@ -206,12 +215,17 @@ export async function redeemVoucher(userId: string, voucherId: number) {
  * Update XP user
  */
 export async function updateUserXP(userId: string, xpToAdd: number) {
-  const config = getConfig();
+  let config = getConfig();
   if (!config) {
-    throw new Error("Config not loaded. Call setupApiClient() first.");
+    await setupApiClient();
+    config = getConfig();
+  }
+  if (!config) {
+    throw new Error("Config not loaded.");
   }
 
-  const url = `${config.apiBaseUrl}?action=updateUserXP`;
+  const separator = config.apiBaseUrl.includes('?') ? '&' : '?';
+  const url = `${config.apiBaseUrl}${separator}action=updateUserXP`;
 
   try {
     const response = await fetch(url, {

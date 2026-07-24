@@ -1,6 +1,6 @@
 {
   "version": "1.0.1",
-  "apiBaseUrl": "https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnR7jc4De2XcY6kj8iLefaeuVv4KDtf3Y9jkqgRzXB7QV9o6gKspELj3XI-XeCHaYH_NLXyGREjSNzpW38P1cEVRJ8KMidLHRfta-7CqF2xkaY6_X670rVkVhweuVWbJW-y9lynJpUBv1HdE-q8Zx7u50YyUqM9eg5X1R62U64QBRNMjO20DjtVgmXdLl5-C-XW-tiD76TUSk9g7bt_SlH6f4sfbyqwuN3u01PZOKBklI49AQFdcSlnxpBmGM7q9owF4FPsTeWRvLM3TAHgiTXhy2US0HuIXiPqCehKVA3VxhHWT_SM&lib=Mmn9tbPFMvJiwrhsJKQxBPPDqDYn_RdzR",
+  "apiBaseUrl": "https://script.google.com/macros/s/AKfycbwDmh_cc-J9c0cuzcSThFQBdiZ7lpy3oUjDENZhHW-4UszuKwPB20g6OeRccVsgvp79hw/exec",
   "apiTimeout": 30000,
   "features": {
     "cart": true,

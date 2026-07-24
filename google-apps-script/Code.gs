@@ -1,4 +1,4 @@
-const SPREADSHEET_ID = '174qAwA2hddfQOFUFDx7czOtpRlD9WUiiIaf6Yao8WRc'; // ID Google Spreadsheet
+const SPREADSHEET_ID = '1v6Ee9Mxa1gLsccf5U_062y1meYxvd4CieDPvYk4bFvA'; // ID Google Spreadsheet
 
 /**
  * Fungsi utama untuk menangani request GET.
@@ -120,54 +120,92 @@ function getOrCreateSheet(sheetName, headers) {
  * @returns {Array<Object>} Array objek produk.
  */
 function getProducts(params) {
-  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('products');
-  if (!sheet) {
-    return [];
-  }
-
-  const data = sheet.getDataRange().getValues();
-  if (data.length === 0) {
-    return [];
-  }
-
-  const headers = data[0]; // Baris pertama adalah header
-  const products = [];
-
-  // Map kolom dari spreadsheet ke format API
-  const headerMap = {};
-  headers.forEach((header, index) => {
-    headerMap[header] = index;
-  });
-
-  // Process data rows (skip header)
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-    
-    // Skip empty rows
-    if (!row[headerMap['id']] && !row[headerMap['nama']]) {
-      continue;
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName('products');
+    if (!sheet) {
+      Logger.log('Sheet "products" not found');
+      return [];
     }
 
-    const product = {
-      id: parseInt(row[headerMap['id']]) || i,
-      name: row[headerMap['nama']] || '',
-      price: parseInt(row[headerMap['harga']]) || 0,
-      originalPrice: parseInt(row[headerMap['harga_coret']]) || parseInt(row[headerMap['harga']]) || 0,
-      discountPercent: 0,
-      imageUrl: row[headerMap['gambar']] || 'https://via.placeholder.com/200',
-      images: [],
-      categoryId: 1,
-      categoryName: 'Paket Sembako',
-      rating: 4.5,
-      reviewCount: 0,
-      sold: parseInt(row[headerMap['stok']]) || 0,
-      badge: 'Terlaris',
-      isPromo: false,
-      description: row[headerMap['nama']] || '',
-      shelfLife: '6 Bulan',
-      deliveryInfo: '1-2 Jam Tiba',
-      variants: []
+    const data = sheet.getDataRange().getValues();
+    if (!data || data.length <= 1) {
+      Logger.log('No data found in sheet "products"');
+      return [];
+    }
+
+    const headers = data[0]; // Baris pertama adalah header
+    const products = [];
+
+    // Map kolom dari spreadsheet ke format API
+    const headerMap = {};
+    headers.forEach((header, index) => {
+      if (header) {
+        headerMap[String(header).toLowerCase().trim()] = index;
+      }
+    });
+
+    // Helper to get value by flexible header name
+    const getVal = (row, key) => {
+      const idx = headerMap[key.toLowerCase()];
+      return idx !== undefined ? row[idx] : undefined;
     };
+
+    // Process data rows (skip header)
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      
+      const idVal = getVal(row, 'id');
+      const nameVal = getVal(row, 'name') || getVal(row, 'nama');
+      
+      // Skip empty rows
+      if (!idVal && !nameVal) {
+        continue;
+      }
+
+      // Helper for parsing Indonesian numbers (e.g., "4,5" -> 4.5)
+      const parseNum = (val) => {
+        if (typeof val === 'string') {
+          return parseFloat(val.replace(',', '.'));
+        }
+        return parseFloat(val);
+      };
+
+      const product = {
+        id: parseInt(idVal) || i,
+        name: String(nameVal || ''),
+        price: parseInt(getVal(row, 'price')) || parseInt(getVal(row, 'harga')) || 0,
+        originalPrice: parseInt(getVal(row, 'originalPrice')) || parseInt(getVal(row, 'harga_coret')) || 0,
+        discountPercent: parseInt(getVal(row, 'discountPercent')) || 0,
+        imageUrl: String(getVal(row, 'imageUrl') || getVal(row, 'gambar') || 'https://via.placeholder.com/200'),
+        images: [],
+        categoryId: parseInt(getVal(row, 'categoryId')) || 1,
+        categoryName: String(getVal(row, 'categoryName') || 'Umum'),
+        rating: parseNum(getVal(row, 'rating')) || 4.5,
+        reviewCount: parseInt(getVal(row, 'reviewCount')) || 0,
+        sold: parseInt(getVal(row, 'sold')) || parseInt(getVal(row, 'stok')) || 0,
+        badge: String(getVal(row, 'badge') || 'Terlaris'),
+        isPromo: String(getVal(row, 'isPromo')).toUpperCase() === 'TRUE',
+        description: String(getVal(row, 'description') || nameVal || ''),
+        shelfLife: String(getVal(row, 'shelfLife') || '6 Bulan'),
+        deliveryInfo: String(getVal(row, 'deliveryInfo') || '1-2 Jam Tiba'),
+        variants: []
+      };
+
+      // Parse JSON fields if available
+      const imagesRaw = getVal(row, 'images');
+      if (imagesRaw) {
+        try { product.images = JSON.parse(imagesRaw); } catch (e) { product.images = []; }
+      }
+      const variantsRaw = getVal(row, 'variants');
+      if (variantsRaw) {
+        try { product.variants = JSON.parse(variantsRaw); } catch (e) { product.variants = []; }
+      }
+
+    // Fallback for originalPrice if it's 0 or missing
+    if (product.originalPrice === 0) {
+      product.originalPrice = product.price;
+    }
 
     // Calculate discount percent jika ada harga coret
     if (product.originalPrice > product.price) {
@@ -211,13 +249,17 @@ function getProducts(params) {
     }
   }
 
-  // Apply limit
-  if (params.limit) {
-    const limit = parseInt(params.limit);
-    filteredProducts = filteredProducts.slice(0, limit);
-  }
+    // Apply limit
+    if (params && params.limit) {
+      const limit = parseInt(params.limit);
+      filteredProducts = filteredProducts.slice(0, limit);
+    }
 
-  return filteredProducts;
+    return filteredProducts;
+  } catch (e) {
+    Logger.log('Error in getProducts: ' + e.toString());
+    return []; // Always return an array
+  }
 }
 
 /**
