@@ -284,6 +284,12 @@ function getUser(id) {
 function getAvailableVouchers() {
   const voucherHeaders = ['id', 'type', 'title', 'points', 'value', 'expiryDays', 'color', 'description'];
   const sheet = getOrCreateSheet('Vouchers', voucherHeaders);
+  
+  // Cek apakah sheet kosong (hanya ada header)
+  if (sheet.getLastRow() <= 1) {
+    seedDummyVouchers(sheet);
+  }
+  
   const data = sheet.getDataRange().getValues();
   const headers = data.shift();
   const vouchers = [];
@@ -371,6 +377,14 @@ function getPointsHistory(userId) {
  * @returns {Object} Hasil penukaran.
  */
 function redeemVoucher(userId, voucherId) {
+  // 1. Validasi & Keamanan Input
+  if (!userId) {
+    throw new Error('Parameter userId wajib diisi');
+  }
+  if (!voucherId) {
+    throw new Error('Parameter voucherId wajib diisi');
+  }
+  
   // Get user
   const user = getUser(userId);
   
@@ -443,6 +457,14 @@ function redeemVoucher(userId, voucherId) {
  * @returns {Object} Hasil update.
  */
 function updateUserXP(userId, xpToAdd) {
+  // 1. Validasi & Keamanan Input
+  if (!userId) {
+    throw new Error('Parameter userId wajib diisi');
+  }
+  if (xpToAdd === undefined || xpToAdd === null) {
+    throw new Error('Parameter xpToAdd wajib diisi');
+  }
+  
   const user = getUser(userId);
   const newXP = user.xp + xpToAdd;
   
@@ -487,12 +509,32 @@ function updateUserXP(userId, xpToAdd) {
  * @returns {string} Random code.
  */
 function generateRandomCode(length) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
+}
+
+/**
+ * Menambahkan data voucher dummy ke sheet 'Vouchers'.
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - Objek sheet Vouchers.
+ */
+function seedDummyVouchers(sheet) {
+  const dummyVouchers = [
+    [1, 'Voucher Belanja', 'Diskon Belanja Rp 10.000', 500, 10000, 30, 'bg-green-700', 'Voucher diskon belanja senilai Rp 10.000 untuk semua produk.'],
+    [2, 'Gratis Ongkir', 'Gratis Ongkir s.d Rp 15.000', 300, 15000, 14, 'bg-blue-600', 'Voucher gratis ongkir hingga Rp 15.000 dengan minimal belanja Rp 50.000.'],
+    [3, 'Cashback', 'Cashback 5% s.d Rp 20.000', 800, 20000, 7, 'bg-orange-500', 'Cashback 5% dalam bentuk poin setelah transaksi selesai.'],
+    [4, 'Voucher Belanja', 'Diskon Belanja Rp 50.000', 2000, 50000, 60, 'bg-green-700', 'Voucher diskon belanja besar senilai Rp 50.000.'],
+    [5, 'Gratis Ongkir', 'Gratis Ongkir Tanpa Min. Belanja', 1000, 20000, 30, 'bg-blue-600', 'Nikmati gratis ongkir tanpa minimum pembelanjaan ke seluruh Indonesia.']
+  ];
+  
+  dummyVouchers.forEach(voucher => {
+    sheet.appendRow(voucher);
+  });
+  
+  Logger.log('Dummy vouchers seeded successfully.');
 }
 
 // Fungsi ini akan dijalankan saat Web App di-deploy atau dibuka pertama kali
