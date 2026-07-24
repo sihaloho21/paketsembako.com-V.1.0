@@ -267,19 +267,25 @@ function getUser(id) {
   const data = sheet.getDataRange().getValues();
   const headers = data.shift();
   
-  for (let i = 0; i < data.length; i++) {
-    const row = data[i];
-    if (String(row[0]) === String(id)) {
-      const user = {};
-      for (let j = 0; j < headers.length; j++) {
-        let value = row[j];
-        if (headers[j] === 'points' || headers[j] === 'xp') {
-          value = parseInt(value) || 0;
-        }
-        user[headers[j]] = value;
+  // Optimasi Performa: Menggunakan object mapping untuk pencarian cepat
+  const userMap = {};
+  data.forEach((row, index) => {
+    userMap[String(row[0])] = { row, rowIndex: index + 2 }; // rowIndex for sheet operations
+  });
+
+  const userData = userMap[String(id)];
+  if (userData) {
+    const user = {};
+    headers.forEach((header, j) => {
+      let value = userData.row[j];
+      if (header === 'points' || header === 'xp') {
+        value = parseInt(value) || 0;
       }
-      return user;
-    }
+      user[header] = value;
+    });
+    // Menambahkan rowIndex ke objek user untuk mempermudah update di sheet
+    user._rowIndex = userData.rowIndex;
+    return user;
   }
   
   throw new Error('User not found with ID: ' + id);
@@ -301,17 +307,16 @@ function initializeUser(id, name, email) {
   const sheet = getOrCreateSheet('Users', userHeaders);
   const data = sheet.getDataRange().getValues();
   
-  // Cek apakah user sudah ada
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === String(id)) {
-      // User sudah ada, return data yang ada
-      return {
-        success: true,
-        isNew: false,
-        message: 'User already exists',
-        userId: id
-      };
-    }
+  // Optimasi Performa: Object mapping untuk pengecekan keberadaan user
+  const existingUserIds = new Set(data.map(row => String(row[0])));
+  
+  if (existingUserIds.has(String(id))) {
+    return {
+      success: true,
+      isNew: false,
+      message: 'User already exists',
+      userId: id
+    };
   }
   
   // User baru, tambahkan ke sheet
@@ -444,12 +449,16 @@ function redeemVoucher(userId, voucherId) {
     throw new Error('Parameter voucherId wajib diisi');
   }
   
-  // Get user
+  // Get user (Sudah dioptimasi dengan _rowIndex)
   const user = getUser(userId);
   
   // Get voucher
   const vouchers = getAvailableVouchers();
-  const voucher = vouchers.find(v => v.id === parseInt(voucherId));
+  // Optimasi: Mapping voucher untuk pencarian cepat
+  const voucherMap = {};
+  vouchers.forEach(v => voucherMap[v.id] = v);
+  
+  const voucher = voucherMap[parseInt(voucherId)];
   
   if (!voucher) {
     throw new Error('Voucher not found with ID: ' + voucherId);
@@ -462,14 +471,9 @@ function redeemVoucher(userId, voucherId) {
   // Deduct points from user
   const newPoints = user.points - voucher.points;
   const userSheet = getOrCreateSheet('Users', ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl']);
-  const userData = userSheet.getDataRange().getValues();
   
-  for (let i = 1; i < userData.length; i++) {
-    if (String(userData[i][0]) === String(userId)) {
-      userSheet.getRange(i + 1, 4).setValue(newPoints); // Update points column
-      break;
-    }
-  }
+  // Optimasi: Langsung update menggunakan _rowIndex tanpa looping lagi
+  userSheet.getRange(user._rowIndex, 4).setValue(newPoints); // Update points column (kolom 4)
   
   // Create user voucher record
   const userVoucherSheet = getOrCreateSheet('UserVouchers', ['id', 'userId', 'voucherId', 'code', 'redeemedAt', 'expiryAt', 'status']);
@@ -524,7 +528,7 @@ function updateUserXP(userId, xpToAdd) {
     throw new Error('Parameter xpToAdd wajib diisi');
   }
   
-  const user = getUser(userId);
+  const user = getUser(userId); // Sudah dioptimasi dengan _rowIndex
   const newXP = user.xp + xpToAdd;
   
   // Level progression logic
@@ -544,15 +548,10 @@ function updateUserXP(userId, xpToAdd) {
   
   // Update user sheet
   const userSheet = getOrCreateSheet('Users', ['id', 'name', 'email', 'points', 'xp', 'level', 'avatarUrl']);
-  const userData = userSheet.getDataRange().getValues();
   
-  for (let i = 1; i < userData.length; i++) {
-    if (String(userData[i][0]) === String(userId)) {
-      userSheet.getRange(i + 1, 5).setValue(newXP); // Update XP column
-      userSheet.getRange(i + 1, 6).setValue(newLevel); // Update level column
-      break;
-    }
-  }
+  // Optimasi: Langsung update menggunakan _rowIndex
+  userSheet.getRange(user._rowIndex, 5).setValue(newXP); // Update XP column (kolom 5)
+  userSheet.getRange(user._rowIndex, 6).setValue(newLevel); // Update level column (kolom 6)
   
   return {
     success: true,
